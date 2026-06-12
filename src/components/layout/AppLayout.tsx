@@ -1,0 +1,23 @@
+import { Outlet } from 'react-router-dom'
+import { Sidebar } from './Sidebar'
+
+export function AppLayout() {
+  return (
+    <div className="flex h-screen overflow-hidden bg-exia-obsidian">
+      <Sidebar />
+      <main className="flex flex-1 flex-col overflow-y-auto bg-exia-obsidian relative">
+        {/* Subtle grid background */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.3]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+        <div className="relative z-10 flex flex-1 flex-col">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  )
+}
