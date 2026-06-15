@@ -7,6 +7,15 @@ export interface HostResponse {
   created_at: string
 }
 
+export interface HardwareInfo {
+  cpu_model: string | null
+  cpu_cores: number | null
+  ram_total_gb: number | null
+  ram_used_percent: number | null
+  disk_total_gb: number | null
+  disk_used_percent: number | null
+}
+
 export interface SoftwareItem {
   id: string
   name: string
@@ -23,11 +32,13 @@ export interface PatchOnHost {
   severity: string | null
   status: string
   scheduled_at: string | null
+  cve_references: string[] | null
 }
 
 export interface HostSoftwareResponse {
   host_id: string
   hostname: string
+  hardware?: HardwareInfo | null
   software: SoftwareItem[]
   patches: PatchOnHost[]
 }

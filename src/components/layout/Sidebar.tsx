@@ -1,19 +1,16 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Server, Bug, ShieldCheck, Zap, Circle } from 'lucide-react'
+import { LayoutDashboard, Server, ShieldCheck, Zap } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/',      label: 'Dashboard', icon: LayoutDashboard },
   { to: '/hosts', label: 'Hosts',     icon: Server },
-  { to: '/hosts/placeholder', label: 'Scans', icon: Bug, disabled: true },
 ]
 
 export function Sidebar() {
   return (
-    <aside className="flex w-60 flex-col bg-exia-navy border-r border-white/[0.04]" style={{ boxShadow: '1px 0 0 rgba(255,255,255,0.03)' }}>
-
-      {/* ── Logo ── */}
-      <div className="flex h-14 items-center gap-3 px-5 border-b border-white/[0.04]">
-        <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-exia-cyan/30 to-exia-cyan/5 border border-exia-cyan/20">
+    <aside className="flex w-60 flex-col bg-exia-navy border-r border-exia-border/40 shadow-sidebar">
+      <div className="flex h-14 items-center gap-3 px-5 border-b border-exia-border/30">
+        <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-exia-cyan/25 to-exia-cyan/5 border border-exia-cyan/20">
           <ShieldCheck size={16} className="text-exia-cyan" />
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-exia-green shadow-glow-green" />
         </div>
@@ -27,7 +24,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* ── Nav ── */}
       <nav className="flex-1 px-3 py-5 space-y-0.5">
         <p className="mb-3 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-exia-text-muted">
           Navigation
@@ -35,22 +31,6 @@ export function Sidebar() {
 
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
-
-          if (item.disabled) {
-            return (
-              <span
-                key={item.to}
-                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-exia-text-muted select-none"
-              >
-                <Icon size={16} />
-                <span className="flex-1">{item.label}</span>
-                <span className="rounded-full bg-exia-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-exia-text-secondary">
-                  Soon
-                </span>
-              </span>
-            )
-          }
-
           return (
             <NavLink
               key={item.to}
@@ -78,18 +58,17 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* ── System Status ── */}
-      <div className="border-t border-white/[0.04] px-5 py-4">
+      <div className="border-t border-exia-border/30 px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="relative flex h-2 w-2">
-            <Circle size={8} className="fill-exia-green text-exia-green animate-pulse-slow" />
+            <span className="h-2 w-2 rounded-full bg-exia-green animate-pulse-slow" />
             <span className="absolute inline-flex h-full w-full rounded-full bg-exia-green opacity-30 animate-ping" />
           </div>
           <span className="text-[10px] font-medium text-exia-green">System Operational</span>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-exia-text-muted">
           <Zap size={10} />
-          <span>Exia Technologies © 2026</span>
+          <span>Exia Technologies &copy; 2026</span>
         </div>
       </div>
     </aside>

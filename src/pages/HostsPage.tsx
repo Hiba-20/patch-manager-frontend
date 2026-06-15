@@ -1,114 +1,177 @@
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHosts } from '../hooks/useHosts'
+import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
-import { Server, ChevronRight, Search, Monitor, Terminal } from 'lucide-react'
+import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
+import { Server, Monitor, Terminal, ChevronRight, X } from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
+import type { HostResponse } from '../types/host'
 
 const OS_ICON: Record<string, typeof Server> = {
   windows: Monitor,
-  linux:   Terminal,
-  macos:   Monitor,
+  linux: Terminal,
+  macos: Monitor,
 }
 
 export function HostsPage() {
   const { data: hosts, loading, error } = useHosts()
   const navigate = useNavigate()
+  const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
+
+  const osTypes = useMemo(() => getUniqueOsTypes(hosts), [hosts])
+  const statuses = useMemo(() => getUniqueStatuses(hosts), [hosts])
+  const filteredHosts = useMemo(() => filterHosts(hosts, filters), [hosts, filters])
+
+  const columns = useMemo<ColumnDef<HostResponse>[]>(() => [
+    {
+      header: 'Hostname',
+      accessorKey: 'hostname',
+      cell: ({ row }) => {
+        const host = row.original
+        const OsIcon = OS_ICON[host.os_type?.toLowerCase() ?? ''] ?? Server
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-exia-elevated border border-exia-border/40 text-exia-text-secondary group-hover:border-exia-cyan/20 group-hover:text-exia-cyan transition-colors">
+              <OsIcon size={14} />
+            </div>
+            <span className="font-semibold text-white group-hover:text-exia-cyan transition-colors">
+              {host.hostname}
+            </span>
+          </div>
+        )
+      },
+    },
+    {
+      header: 'IP Address',
+      accessorKey: 'ip_address',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs text-exia-text-secondary">{getValue() as string}</span>
+      ),
+    },
+    {
+      header: 'OS',
+      accessorKey: 'os_type',
+      cell: ({ getValue }) => (
+        <span className="rounded-md border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-xs font-medium capitalize text-exia-text-secondary">
+          {getValue() as string}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessorKey: 'status',
+      cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+    },
+    {
+      header: 'Registered',
+      accessorKey: 'created_at',
+      cell: ({ getValue }) => {
+        const date = getValue() as string
+        return (
+          <span className="text-xs text-exia-text-muted">
+            {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          </span>
+        )
+      },
+    },
+    {
+      id: 'chevron',
+      header: '',
+      cell: () => (
+        <ChevronRight size={16} className="ml-auto text-exia-text-muted opacity-0 group-hover:opacity-100 group-hover:text-exia-cyan transition-all" />
+      ),
+    },
+  ], [])
+
+  const activeFilterCount = [filters.search, filters.osType, filters.status].filter(Boolean).length
 
   if (loading) return <LoadingSpinner />
-  if (error)   return <><TopBar title="Hosts" /><div className="p-8"><ErrorAlert message={error} /></div></>
+  if (error) return <><TopBar title="Hosts" /><div className="p-8"><ErrorAlert message={error} /></div></>
 
   return (
     <>
       <TopBar title="Hosts" subtitle={`${hosts.length} machines`} />
 
       <div className="space-y-5 p-8 animate-slide-up">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1 max-w-xs">
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                placeholder="Search by hostname, IP, or OS…"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2 pl-3 pr-8 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+              />
+              {filters.search && (
+                <button
+                  onClick={() => setFilters((f) => ({ ...f, search: '' }))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-exia-text-muted hover:text-exia-text-secondary transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
-        {/* ── Toolbar ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-exia-text-muted" />
-            <input
-              type="text"
-              placeholder="Search hosts…"
-              className="w-full rounded-lg border border-white/[0.06] bg-exia-card py-2 pl-9 pr-4 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
-              readOnly
-            />
+            <select
+              value={filters.osType}
+              onChange={(e) => setFilters((f) => ({ ...f, osType: e.target.value }))}
+              className="rounded-lg border border-exia-border/50 bg-exia-card px-3 py-2 text-xs text-exia-text-secondary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+            >
+              <option value="">All OS</option>
+              {osTypes.map((os) => (
+                <option key={os} value={os}>{os}</option>
+              ))}
+            </select>
+
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+              className="rounded-lg border border-exia-border/50 bg-exia-card px-3 py-2 text-xs text-exia-text-secondary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+            >
+              <option value="">All Status</option>
+              {statuses.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => setFilters(DEFAULT_HOST_FILTERS)}
+                className="flex items-center gap-1 rounded-lg border border-exia-border/40 bg-exia-elevated px-2.5 py-2 text-[11px] font-medium text-exia-text-secondary hover:text-exia-cyan hover:border-exia-cyan/30 transition-colors"
+              >
+                <X size={12} />
+                Clear
+              </button>
+            )}
           </div>
-          <p className="text-xs text-exia-text-muted">
-            {hosts.length} registered machine{hosts.length !== 1 ? 's' : ''}
+
+          <p className="text-xs text-exia-text-muted whitespace-nowrap">
+            {filteredHosts.length} of {hosts.length} machine{hosts.length !== 1 ? 's' : ''}
           </p>
         </div>
 
-        {/* ── Table ───────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-xl border border-white/[0.05] shadow-card">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.05] bg-exia-elevated">
-                <th className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">Hostname</th>
-                <th className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">IP Address</th>
-                <th className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">OS</th>
-                <th className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">Status</th>
-                <th className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">Registered</th>
-                <th className="px-5 py-3.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.03] bg-exia-card">
-              {hosts.map((host) => {
-                const OsIcon = OS_ICON[host.os_type?.toLowerCase() ?? ''] ?? Server
-                return (
-                  <tr
-                    key={host.id}
-                    onClick={() => navigate(`/hosts/${host.id}`)}
-                    className="table-row-hover group cursor-pointer transition-all duration-150"
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-exia-elevated border border-white/[0.05] text-exia-text-secondary group-hover:border-exia-cyan/20 group-hover:text-exia-cyan transition-colors">
-                          <OsIcon size={14} />
-                        </div>
-                        <span className="font-semibold text-white group-hover:text-exia-cyan transition-colors">
-                          {host.hostname}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 font-mono text-xs text-exia-text-secondary">{host.ip_address}</td>
-                    <td className="px-5 py-4">
-                      <span className="rounded-md border border-white/[0.06] bg-exia-elevated px-2 py-0.5 text-xs font-medium capitalize text-exia-text-secondary">
-                        {host.os_type}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <StatusBadge status={host.status} />
-                    </td>
-                    <td className="px-5 py-4 text-xs text-exia-text-muted">
-                      {new Date(host.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <ChevronRight size={16} className="ml-auto text-exia-text-muted opacity-0 group-hover:opacity-100 group-hover:text-exia-cyan transition-all" />
-                    </td>
-                  </tr>
-                )
-              })}
-
-              {hosts.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.06] bg-exia-elevated text-exia-text-muted">
-                        <Server size={24} />
-                      </div>
-                      <p className="text-sm font-medium text-exia-text-secondary">No hosts registered yet</p>
-                      <p className="text-xs text-exia-text-muted">Deploy the agent on your machines to start monitoring</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
+        <DataTable
+          data={filteredHosts}
+          columns={columns}
+          onRowClick={(host) => navigate(`/hosts/${host.id}`)}
+          enableSearch={false}
+          enableSorting
+          pageSize={25}
+          emptyState={
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-exia-border/40 bg-exia-elevated text-exia-text-muted">
+                <Server size={24} />
+              </div>
+              <p className="text-sm font-medium text-exia-text-secondary">No hosts registered yet</p>
+              <p className="text-xs text-exia-text-muted">Deploy the agent on your machines to start monitoring</p>
+            </div>
+          }
+        />
       </div>
     </>
   )

@@ -6,7 +6,7 @@ interface StatsCardProps {
   value: string | number
   icon: ReactNode
   accent?: 'cyan' | 'green' | 'amber' | 'red'
-  trend?: number   // optional trend % (positive = up)
+  trend?: number
   sublabel?: string
 }
 
@@ -45,20 +45,16 @@ export function StatsCard({ title, value, icon, accent = 'cyan', trend, sublabel
   const cfg = ACCENT_CONFIG[accent]
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-white/[0.05] bg-exia-card p-5 shadow-card transition-all duration-300 hover:border-white/[0.09] hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in">
-      {/* Top accent gradient line */}
+    <div className="group relative overflow-hidden rounded-xl border border-exia-border/50 bg-exia-card p-5 shadow-card transition-all duration-300 hover:border-exia-border/70 hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in">
       <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r ${cfg.topLine}`} />
 
-      {/* Background subtle glow on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/[0.015] to-transparent rounded-xl" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/[0.02] to-transparent rounded-xl" />
 
       <div className="relative flex items-start justify-between">
-        {/* Icon */}
         <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${cfg.iconBg} ${cfg.iconText} transition-transform duration-300 group-hover:scale-110`}>
           {icon}
         </div>
 
-        {/* Trend badge */}
         {trend !== undefined && (
           <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
             trend >= 0 ? 'bg-exia-green/10 text-exia-green' : 'bg-exia-red/10 text-exia-red'
