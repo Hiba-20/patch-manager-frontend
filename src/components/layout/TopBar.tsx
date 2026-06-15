@@ -1,5 +1,6 @@
-import { Bell, ChevronRight } from 'lucide-react'
+import { Bell, ChevronRight, LogOut, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 
 interface TopBarProps {
   title: string
@@ -8,6 +9,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
+  const { user, logout } = useAuth()
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -51,9 +53,20 @@ export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-exia-amber shadow-glow-amber" />
         </button>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-exia-cyan/20 to-exia-cyan/5 border border-exia-cyan/20 text-[11px] font-bold text-exia-cyan">
-          ET
-        </div>
+        {user && (
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-exia-cyan/20 to-exia-cyan/5 border border-exia-cyan/20 text-[11px] font-bold text-exia-cyan" title={user.email}>
+              {user.username.slice(0, 2).toUpperCase()}
+            </div>
+            <button
+              onClick={logout}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-exia-border/40 bg-exia-card text-exia-text-secondary transition-colors hover:border-exia-red/30 hover:text-exia-red"
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )
