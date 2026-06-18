@@ -19,6 +19,7 @@ interface DataTableProps<T extends object> {
   columns: ColumnDef<T>[]
   onRowClick?: (row: T) => void
   enableSelection?: boolean
+  onSelectionChange?: (selectedIndices: number[]) => void
   enableSorting?: boolean
   enableSearch?: boolean
   searchPlaceholder?: string
@@ -34,6 +35,7 @@ export function DataTable<T extends object>({
   columns,
   onRowClick,
   enableSelection = false,
+  onSelectionChange,
   enableSorting = true,
   enableSearch = true,
   searchPlaceholder = 'Search…',
@@ -52,12 +54,49 @@ export function DataTable<T extends object>({
   const tableData = useMemo(() => (loading ? Array(pageSize).fill(null).map(() => ({})) as T[] : data), [data, loading, pageSize])
 
   const tableColumns = useMemo<ColumnDef<T>[]>(() => {
-    if (!loading) return columns
-    return columns.map((col) => ({
+    const selectionCol: ColumnDef<T> = {
+      id: 'selection',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllRowsSelected()}
+          onChange={table.getToggleAllRowsSelectedHandler()}
+          className="h-3.5 w-3.5 cursor-pointer rounded border-exia-border/60 bg-exia-card text-exia-cyan focus:ring-exia-cyan/30 accent-cyan-500"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          className="h-3.5 w-3.5 cursor-pointer rounded border-exia-border/60 bg-exia-card text-exia-cyan focus:ring-exia-cyan/30 accent-cyan-500"
+        />
+      ),
+      enableSorting: false,
+      enableGlobalFilter: false,
+      size: 40,
+    }
+
+    const base = [...columns]
+    if (enableSelection && !loading) {
+      base.unshift(selectionCol)
+    }
+    if (!loading) return base
+    return base.map((col) => ({
       ...col,
       cell: () => <div className="h-4 shimmer-bg rounded" style={{ width: `${60 + Math.random() * 80}px` }} />,
     }))
-  }, [columns, loading])
+  }, [columns, loading, enableSelection])
+
+  const selectedCount = Object.keys(rowSelection).length
+
+  const handleRowSelectionChange: typeof setRowSelection = (updater) => {
+    setRowSelection(updater)
+    if (!enableSelection) return
+    const next = typeof updater === 'function' ? updater(rowSelection) : updater
+    const indices = Object.keys(next).map(Number).filter((i) => next[i])
+    onSelectionChange?.(indices)
+  }
 
   const table = useReactTable({
     data: tableData,
@@ -70,7 +109,7 @@ export function DataTable<T extends object>({
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,

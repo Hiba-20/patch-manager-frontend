@@ -1,6 +1,7 @@
 import { Bell, ChevronRight, LogOut, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 interface TopBarProps {
   title: string
@@ -11,6 +12,7 @@ interface TopBarProps {
 export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
   const { user, logout } = useAuth()
   const [now, setNow] = useState(new Date())
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
@@ -59,7 +61,7 @@ export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
               {user.username.slice(0, 2).toUpperCase()}
             </div>
             <button
-              onClick={logout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-exia-border/40 bg-exia-card text-exia-text-secondary transition-colors hover:border-exia-red/30 hover:text-exia-red"
               title="Sign out"
             >
@@ -68,6 +70,16 @@ export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Sign out"
+        message="Are you sure you want to sign out?"
+        confirmLabel="Sign out"
+        variant="danger"
+        onConfirm={() => { logout(); setShowLogoutConfirm(false) }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   )
 }
