@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHosts } from '../hooks/useHosts'
 import { DataTable } from '../components/shared/DataTable'
@@ -8,7 +8,8 @@ import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
 import { getDashboardMissingUpdates } from '../api/updates'
-import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle } from 'lucide-react'
+import { AddHostModal } from '../components/hosts/AddHostModal'
+import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { HostResponse } from '../types/host'
 
@@ -19,12 +20,13 @@ const OS_ICON: Record<string, typeof Server> = {
 }
 
 export function HostsPage() {
-  const { data: hosts, loading, error } = useHosts()
+  const { data: hosts, loading, error, refetch } = useHosts()
   const navigate = useNavigate()
   const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({})
+  const [showAddModal, setShowAddModal] = useState(false)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     getDashboardMissingUpdates()
       .then((res) => {
         const counts: Record<string, number> = {}
@@ -35,6 +37,8 @@ export function HostsPage() {
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   const osTypes = useMemo(() => getUniqueOsTypes(hosts), [hosts])
   const statuses = useMemo(() => getUniqueStatuses(hosts), [hosts])
@@ -177,6 +181,14 @@ export function HostsPage() {
                 Clear
               </button>
             )}
+
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+            >
+              <Plus size={15} />
+              Add Host
+            </button>
           </div>
 
           <p className="text-xs text-exia-text-muted whitespace-nowrap">
@@ -202,6 +214,12 @@ export function HostsPage() {
           }
         />
       </div>
+
+      <AddHostModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onCreated={() => { setShowAddModal(false); refetch() }}
+      />
     </>
   )
 }

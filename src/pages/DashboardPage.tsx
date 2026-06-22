@@ -257,6 +257,8 @@ export function DashboardPage() {
             <p className="mt-4 text-center text-xs text-exia-text-muted">
               {data?.total_hosts === 0
                 ? 'No hosts registered'
+                : data && data.hosts_without_data > 0
+                ? `${data.hosts_without_data} host(s) have no scan data`
                 : `${compliantHosts} of ${data?.total_hosts} hosts fully updated`}
             </p>
           </div>

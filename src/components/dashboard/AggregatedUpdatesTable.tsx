@@ -138,7 +138,8 @@ export function AggregatedUpdatesTable() {
       {updates.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-exia-text-muted">
           <CheckCircle2 size={22} className="text-exia-green" />
-          <p className="text-sm font-medium text-exia-green">All hosts up to date</p>
+          <p className="text-sm font-medium text-exia-text-secondary">No missing updates detected</p>
+          <p className="text-[10px] text-exia-text-muted">Hosts may be unreachable or fully up to date</p>
         </div>
       ) : (
         <div className="space-y-2">

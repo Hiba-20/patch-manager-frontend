@@ -4,9 +4,11 @@ import { getMissingUpdates, getDeepScanUpdates, deployPatch } from '../../api/up
 import type { MissingUpdate } from '../../types/update'
 import { DataTable } from '../shared/DataTable'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useDeployPatch } from '../../hooks/useDeployPatch'
 import { useToast } from '../../components/shared/Toast'
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog'
+import { useActiveDeployments } from '../../hooks/useActiveDeployments'
+
+type DeployState = 'idle' | 'deploying' | 'success' | 'failed'
 
 const SEVERITY_CONFIG: Record<string, { bg: string; text: string; border: string }> = {
   Critical:  { bg: 'bg-exia-red/10',   text: 'text-exia-red',   border: 'border-exia-red/25' },
@@ -25,7 +27,7 @@ function formatCacheAge(cachedAt: string | null): string | null {
   return `${hrs}h ${min % 60}m ago`
 }
 
-export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osType?: string }) {
+export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: string; osType?: string; hostname?: string }) {
   const [updates, setUpdates] = useState<MissingUpdate[]>([])
   const [loading, setLoading] = useState(true)
   const [deepScanning, setDeepScanning] = useState(false)
@@ -36,17 +38,9 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
   const [bulkDeploying, setBulkDeploying] = useState(false)
   const [showBulkConfirm, setShowBulkConfirm] = useState(false)
   const [showDeployAllConfirm, setShowDeployAllConfirm] = useState(false)
-  const { kbStates, lastCompleted, deploy, reset } = useDeployPatch()
+  const [kbStates, setKbStates] = useState<Record<string, DeployState>>({})
   const toast = useToast()
-
-  useEffect(() => {
-    if (!lastCompleted) return
-    if (lastCompleted.state === 'success') {
-      toast.success(`${lastCompleted.kbId} deployed successfully`)
-    } else {
-      toast.error(`${lastCompleted.kbId} deployment failed`)
-    }
-  }, [lastCompleted])
+  const { addTask, updateTask } = useActiveDeployments()
 
   const selectedUpdates = selectedIndices.map((i) => updates[i]).filter(Boolean)
 
@@ -76,13 +70,34 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
 
   useEffect(() => { fetchUpdates() }, [fetchUpdates])
 
+  const deploy = async (kbId: string, title: string, severity: string) => {
+    const taskId = addTask(hostId, hostname ?? hostId, kbId, title, severity)
+    updateTask(taskId, { status: 'deploying' })
+    setKbStates(prev => ({ ...prev, [kbId]: 'deploying' }))
+    try {
+      const res = await deployPatch(hostId, kbId, title, severity)
+      const state = res.status === 'SUCCESS' ? 'success' : 'failed'
+      setKbStates(prev => ({ ...prev, [kbId]: state }))
+      updateTask(taskId, { status: state, finishedAt: new Date() })
+      if (state === 'success') {
+        toast.success(`${kbId} deployed successfully`)
+      } else {
+        toast.error(`${kbId} deployment failed`)
+      }
+    } catch {
+      setKbStates(prev => ({ ...prev, [kbId]: 'failed' }))
+      updateTask(taskId, { status: 'failed', finishedAt: new Date() })
+      toast.error(`${kbId} deployment failed`)
+    }
+  }
+
   const handleDeploy = (kb: MissingUpdate) => {
     setDeployTarget(kb)
   }
 
   const handleConfirmDeploy = () => {
     if (!deployTarget) return
-    deploy(hostId, deployTarget.kb_id, deployTarget.title, deployTarget.severity)
+    deploy(deployTarget.kb_id, deployTarget.title, deployTarget.severity)
     setDeployTarget(null)
     handleDeepScan()
   }
@@ -91,7 +106,7 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
     setShowBulkConfirm(false)
     setBulkDeploying(true)
     for (const u of selectedUpdates) {
-      await deploy(hostId, u.kb_id, u.title, u.severity)
+      await deploy(u.kb_id, u.title, u.severity)
     }
     setBulkDeploying(false)
     setSelectedIndices([])
@@ -102,7 +117,7 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
     setShowDeployAllConfirm(false)
     setBulkDeploying(true)
     for (const u of updates) {
-      await deploy(hostId, u.kb_id, u.title, u.severity)
+      await deploy(u.kb_id, u.title, u.severity)
     }
     setBulkDeploying(false)
     handleDeepScan()
@@ -174,7 +189,7 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
                 <><Loader2 size={11} className="animate-spin" /> Deploying</>
               ) : done && kbs === 'success' ? (
                 <><CheckCircle2 size={11} /> Done</>
-              ) : done ? (
+              ) : done && kbs === 'failed' ? (
                 <><XCircle size={11} /> Failed</>
               ) : (
                 'Deploy'
@@ -296,7 +311,7 @@ export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osTy
       <ConfirmDialog
         open={!!deployTarget}
         title={`Deploy ${deployTarget?.kb_id ?? ''}`}
-        message={`Install ${deployTarget?.title ?? ''} on ${hostId}?`}
+        message={`Install ${deployTarget?.title ?? ''} on ${hostname ?? hostId}?`}
         confirmLabel="Deploy"
         onConfirm={handleConfirmDeploy}
         onCancel={() => setDeployTarget(null)}

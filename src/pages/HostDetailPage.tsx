@@ -321,7 +321,7 @@ export function HostDetailPage() {
 
         <div id="updates">
           {hostId && (
-            <MissingUpdatesSection hostId={hostId} osType={host.os_type} />
+            <MissingUpdatesSection hostId={hostId} osType={host.os_type} hostname={host.hostname} />
           )}
         </div>
 
