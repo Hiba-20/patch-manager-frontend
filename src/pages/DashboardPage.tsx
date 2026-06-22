@@ -1,7 +1,9 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp, Info, ClipboardCheck } from 'lucide-react'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { useTrendHistory } from '../hooks/useTrendHistory'
+import { getDeployments } from '../api/patches'
 import { StatsCard } from '../components/shared/StatsCard'
 import { ComplianceTrendChart } from '../components/dashboard/ComplianceTrendChart'
 import { SeverityBreakdownChart } from '../components/dashboard/SeverityBreakdownChart'
@@ -43,6 +45,26 @@ function DonutLabel({ value, sub, color }: { value: string | number; sub: string
 export function DashboardPage() {
   const { data, loading, error, lastUpdated } = useDashboardStats()
   const { history } = useTrendHistory(data)
+  const [deployActivity, setDeployActivity] = useState<{ date: string; count: number }[]>([])
+
+  useEffect(() => {
+    getDeployments()
+      .then((deps) => {
+        const last7 = new Date()
+        last7.setDate(last7.getDate() - 7)
+        const counts: Record<string, number> = {}
+        for (const d of deps) {
+          const time = d.finished_at || d.started_at || d.scheduled_at
+          if (!time) continue
+          const date = new Date(time)
+          if (date < last7) continue
+          const key = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          counts[key] = (counts[key] ?? 0) + 1
+        }
+        setDeployActivity(Object.entries(counts).map(([date, count]) => ({ date, count })))
+      })
+      .catch(() => {})
+  }, [])
 
   if (loading) return <DashboardSkeleton />
   if (error) return <><TopBar title="Dashboard" /><div className="p-8"><ErrorAlert message={error} /></div></>
@@ -271,6 +293,32 @@ export function DashboardPage() {
             For enterprise caching, pair with <span className="font-semibold text-exia-cyan">WSUS</span> or
             {' '}<span className="font-semibold text-exia-cyan">Microsoft Configuration Manager</span>.
           </p>
+        </div>
+
+        <div className="depth-card rounded-xl p-6">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-exia-amber/20 to-transparent rounded-t-xl" />
+          <div className="mb-1 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">
+              Deployment Activity (7 days)
+            </p>
+            <ClipboardCheck size={14} className="text-exia-cyan" />
+          </div>
+          <div style={{ height: 160 }}>
+            {deployActivity.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-exia-text-muted text-xs">
+                No recent deployments
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={deployActivity}>
+                  <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={{ stroke: '#1e3050' }} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} width={20} />
+                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(34,211,238,0.2)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#94a3b8' }} />
+                  <Bar dataKey="count" fill="#22d3ee" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
 
         <AggregatedUpdatesTable />

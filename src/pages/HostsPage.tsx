@@ -265,6 +265,7 @@ export function HostsPage() {
       />
 
       <EditHostModal
+        key={editTarget?.id ?? 'closed'}
         host={editTarget!}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}

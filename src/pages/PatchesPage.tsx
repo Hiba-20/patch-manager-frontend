@@ -1,11 +1,13 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, AlertTriangle, Bug, Plus, X } from 'lucide-react'
+import { Shield, AlertTriangle, Bug, Plus, Trash2, X } from 'lucide-react'
 import { DataTable } from '../components/shared/DataTable'
 import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
-import { getPatches, type PatchResponse } from '../api/patches'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { useToast } from '../components/shared/Toast'
+import { getPatches, createPatch, deletePatch, type PatchResponse } from '../api/patches'
 import type { ColumnDef } from '@tanstack/react-table'
 
 const SEVERITY_CONFIG: Record<string, { bg: string; text: string; border: string }> = {
@@ -28,12 +30,18 @@ function SeverityBadge({ severity }: { severity: string | null }) {
 
 export function PatchesPage() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [patches, setPatches] = useState<PatchResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createData, setCreateData] = useState({ name: '', version: '1.0', vendor: '', severity: 'Medium', os_type: 'windows', cve_input: '' })
+  const [creating, setCreating] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<PatchResponse | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => {
+  const loadPatches = useCallback(() => {
     setLoading(true)
     setError(null)
     getPatches()
@@ -41,6 +49,47 @@ export function PatchesPage() {
       .catch((e) => setError(e?.response?.data?.detail ?? e?.message ?? 'Failed to load patches'))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { loadPatches() }, [loadPatches])
+
+  const handleCreate = async () => {
+    setCreating(true)
+    try {
+      const cves = createData.cve_input ? createData.cve_input.split(',').map((s) => s.trim()).filter(Boolean) : undefined
+      await createPatch({
+        name: createData.name,
+        version: createData.version,
+        vendor: createData.vendor || undefined,
+        severity: createData.severity,
+        os_type: createData.os_type,
+        cve_references: cves,
+      })
+      toast.success('Patch created')
+      setShowCreateModal(false)
+      setCreateData({ name: '', version: '1.0', vendor: '', severity: 'Medium', os_type: 'windows', cve_input: '' })
+      loadPatches()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? (e as Error)?.message ?? 'Failed to create patch'
+      toast.error(msg)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deletePatch(deleteTarget.id)
+      toast.success(`Patch ${deleteTarget.name} deleted`)
+      setDeleteTarget(null)
+      loadPatches()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete patch')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!search) return patches
@@ -118,6 +167,20 @@ export function PatchesPage() {
           </span>
         ),
       },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setDeleteTarget(row.original)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-exia-text-muted transition-colors hover:bg-exia-red/10 hover:text-exia-red"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ),
+      },
     ],
     [],
   )
@@ -148,6 +211,13 @@ export function PatchesPage() {
               </button>
             )}
           </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+          >
+            <Plus size={15} />
+            Create Patch
+          </button>
         </div>
 
         <DataTable
@@ -164,6 +234,124 @@ export function PatchesPage() {
           }
         />
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)}>
+          <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-white">Create Patch</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-exia-text-muted hover:text-exia-text-secondary transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={createData.name}
+                  onChange={(e) => setCreateData((d) => ({ ...d, name: e.target.value }))}
+                  placeholder="e.g. KB5034123"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">Version</label>
+                <input
+                  type="text"
+                  value={createData.version}
+                  onChange={(e) => setCreateData((d) => ({ ...d, version: e.target.value }))}
+                  placeholder="1.0"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">Vendor</label>
+                <input
+                  type="text"
+                  value={createData.vendor}
+                  onChange={(e) => setCreateData((d) => ({ ...d, vendor: e.target.value }))}
+                  placeholder="e.g. Microsoft"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">Severity</label>
+                <select
+                  value={createData.severity}
+                  onChange={(e) => setCreateData((d) => ({ ...d, severity: e.target.value }))}
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                >
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">OS Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setCreateData((d) => ({ ...d, os_type: 'windows' }))}
+                    className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      createData.os_type === 'windows'
+                        ? 'border-exia-cyan/40 bg-exia-cyan/[0.08] text-exia-cyan'
+                        : 'border-exia-border/50 bg-exia-navy text-exia-text-secondary'
+                    }`}
+                  >
+                    Windows
+                  </button>
+                  <button
+                    onClick={() => setCreateData((d) => ({ ...d, os_type: 'linux_debian' }))}
+                    className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      createData.os_type === 'linux_debian'
+                        ? 'border-exia-cyan/40 bg-exia-cyan/[0.08] text-exia-cyan'
+                        : 'border-exia-border/50 bg-exia-navy text-exia-text-secondary'
+                    }`}
+                  >
+                    Linux
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">CVE References (comma-separated)</label>
+                <input
+                  type="text"
+                  value={createData.cve_input}
+                  onChange={(e) => setCreateData((d) => ({ ...d, cve_input: e.target.value }))}
+                  placeholder="e.g. CVE-2024-1234, CVE-2024-5678"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="rounded-lg border border-exia-border/40 px-4 py-2 text-sm font-medium text-exia-text-secondary transition-colors hover:bg-exia-elevated"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={!createData.name || creating}
+                className="rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {creating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete Patch"
+        message={`Are you sure you want to delete "${deleteTarget?.name}"? This will also remove all deployments referencing this patch.`}
+        confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </>
   )
 }

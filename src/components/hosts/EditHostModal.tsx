@@ -11,13 +11,13 @@ interface Props {
 }
 
 export function EditHostModal({ host, open, onClose, onUpdated }: Props) {
-  const [hostname, setHostname] = useState(host.hostname)
-  const [ipAddress, setIpAddress] = useState(host.ip_address)
-  const [osType, setOsType] = useState(host.os_type)
+  const [hostname, setHostname] = useState(host?.hostname ?? '')
+  const [ipAddress, setIpAddress] = useState(host?.ip_address ?? '')
+  const [osType, setOsType] = useState(host?.os_type ?? 'windows')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (!open) return null
+  if (!open || !host) return null
 
   const handleSubmit = async () => {
     setLoading(true)

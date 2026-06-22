@@ -198,7 +198,8 @@ export function DeploymentsPage() {
                   return (
                     <tr
                       key={dep.id}
-                      className="group border-b border-exia-border/20 transition-colors hover:bg-exia-elevated/30"
+                      onClick={() => navigate(`/deployments/${dep.id}`)}
+                      className="group border-b border-exia-border/20 transition-colors hover:bg-exia-elevated/30 cursor-pointer"
                     >
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-white">{dep.patch_name}</span>
