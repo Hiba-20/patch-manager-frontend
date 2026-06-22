@@ -1,15 +1,19 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHosts } from '../hooks/useHosts'
+import { deleteHost } from '../api/hosts'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { useToast } from '../components/shared/Toast'
 import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
 import { getDashboardMissingUpdates } from '../api/updates'
 import { AddHostModal } from '../components/hosts/AddHostModal'
-import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus } from 'lucide-react'
+import { EditHostModal } from '../components/hosts/EditHostModal'
+import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { HostResponse } from '../types/host'
 
@@ -25,6 +29,10 @@ export function HostsPage() {
   const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({})
   const [showAddModal, setShowAddModal] = useState(false)
+  const [editTarget, setEditTarget] = useState<HostResponse | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<HostResponse | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const toast = useToast()
 
   const load = useCallback(() => {
     getDashboardMissingUpdates()
@@ -112,6 +120,26 @@ export function HostsPage() {
       },
     },
     {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setEditTarget(row.original)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-exia-text-muted transition-colors hover:bg-exia-cyan/10 hover:text-exia-cyan"
+          >
+            <Pencil size={13} />
+          </button>
+          <button
+            onClick={() => setDeleteTarget(row.original)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-exia-text-muted transition-colors hover:bg-exia-red/10 hover:text-exia-red"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      ),
+    },
+    {
       id: 'chevron',
       header: '',
       cell: () => (
@@ -119,6 +147,21 @@ export function HostsPage() {
       ),
     },
   ], [pendingCounts])
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteHost(deleteTarget.id)
+      toast.success(`Host ${deleteTarget.hostname} deleted`)
+      setDeleteTarget(null)
+      refetch()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete host')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const activeFilterCount = [filters.search, filters.osType, filters.status].filter(Boolean).length
 
@@ -219,6 +262,23 @@ export function HostsPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onCreated={() => { setShowAddModal(false); refetch() }}
+      />
+
+      <EditHostModal
+        host={editTarget!}
+        open={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        onUpdated={() => refetch()}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete Host"
+        message={`Are you sure you want to delete "${deleteTarget?.hostname}"? This will remove all deployment history for this host.`}
+        confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </>
   )
