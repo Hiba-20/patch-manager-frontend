@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { UserPlus, Trash2, Shield } from 'lucide-react'
+import { UserPlus, Trash2, Shield, Copy, Check } from 'lucide-react'
 import { TopBar } from '../components/layout/TopBar'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
@@ -15,6 +15,7 @@ export function InvitesPage() {
   const [error, setError] = useState<string | null>(null)
   const [showGenerate, setShowGenerate] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -44,15 +45,41 @@ export function InvitesPage() {
     }
   }
 
+  const handleCopyCode = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = code
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
   const columns: ColumnDef<InviteResponse>[] = [
     {
       accessorKey: 'code',
       header: 'Code',
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-exia-text-secondary">
-          {row.original.code.slice(0, 12)}...
-        </span>
-      ),
+      cell: ({ row }) => {
+        const isCopied = copiedId === row.original.id
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-exia-text-secondary truncate max-w-[160px]">
+              {row.original.code}
+            </span>
+            <button
+              onClick={() => handleCopyCode(row.original.code, row.original.id)}
+              className="flex h-6 w-6 items-center justify-center rounded text-exia-text-muted hover:text-exia-cyan hover:bg-exia-cyan/[0.08] transition-colors flex-shrink-0"
+            >
+              {isCopied ? <Check size={12} className="text-exia-green" /> : <Copy size={12} />}
+            </button>
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'created_by_email',
@@ -170,7 +197,7 @@ export function InvitesPage() {
       <GenerateInviteModal
         open={showGenerate}
         onClose={() => setShowGenerate(false)}
-        onCreated={refetch}
+        onCreated={load}
       />
     </div>
   )
