@@ -16,11 +16,12 @@ export async function getDashboardMissingUpdates(): Promise<DashboardMissingUpda
   return data
 }
 
-export async function deployPatch(hostId: string, kbId: string, title?: string, severity?: string): Promise<DeployPatchResponse> {
+export async function deployPatch(hostId: string, kbId: string, title?: string, severity?: string, scheduledAt?: string): Promise<DeployPatchResponse> {
   const { data } = await apiClient.post<DeployPatchResponse>(`/hosts/${hostId}/deploy-patch`, {
     kb_id: kbId,
     title: title ?? '',
     severity: severity ?? 'Important',
+    scheduled_at: scheduledAt || null,
   })
   return data
 }

@@ -5,7 +5,6 @@ import type { MissingUpdate } from '../../types/update'
 import { DataTable } from '../shared/DataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useToast } from '../../components/shared/Toast'
-import { ConfirmDialog } from '../../components/shared/ConfirmDialog'
 import { useActiveDeployments } from '../../hooks/useActiveDeployments'
 
 type DeployState = 'idle' | 'deploying' | 'success' | 'failed'
@@ -39,6 +38,9 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
   const [showBulkConfirm, setShowBulkConfirm] = useState(false)
   const [showDeployAllConfirm, setShowDeployAllConfirm] = useState(false)
   const [kbStates, setKbStates] = useState<Record<string, DeployState>>({})
+  const [scheduleTime, setScheduleTime] = useState('')
+  const [bulkScheduleTime, setBulkScheduleTime] = useState('')
+  const [allScheduleTime, setAllScheduleTime] = useState('')
   const toast = useToast()
   const { addTask, updateTask } = useActiveDeployments()
 
@@ -70,17 +72,18 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
 
   useEffect(() => { fetchUpdates() }, [fetchUpdates])
 
-  const deploy = async (kbId: string, title: string, severity: string) => {
+  const deploy = async (kbId: string, title: string, severity: string, scheduledAt?: string) => {
     const taskId = addTask(hostId, hostname ?? hostId, kbId, title, severity)
-    updateTask(taskId, { status: 'deploying' })
-    setKbStates(prev => ({ ...prev, [kbId]: 'deploying' }))
+    const isScheduled = !!scheduledAt
+    updateTask(taskId, { status: isScheduled ? 'scheduled' : 'deploying' })
+    setKbStates(prev => ({ ...prev, [kbId]: isScheduled ? 'deploying' : 'deploying' }))
     try {
-      const res = await deployPatch(hostId, kbId, title, severity)
-      const state = res.status === 'SUCCESS' ? 'success' : 'failed'
+      const res = await deployPatch(hostId, kbId, title, severity, scheduledAt)
+      const state = isScheduled ? 'success' : (res.status === 'SUCCESS' ? 'success' : 'failed')
       setKbStates(prev => ({ ...prev, [kbId]: state }))
-      updateTask(taskId, { status: state, finishedAt: new Date() })
+      updateTask(taskId, { status: state, finishedAt: isScheduled ? undefined : new Date() })
       if (state === 'success') {
-        toast.success(`${kbId} deployed successfully`)
+        toast.success(isScheduled ? `${kbId} scheduled` : `${kbId} deployed successfully`)
       } else {
         toast.error(`${kbId} deployment failed`)
       }
@@ -97,17 +100,21 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
 
   const handleConfirmDeploy = () => {
     if (!deployTarget) return
-    deploy(deployTarget.kb_id, deployTarget.title, deployTarget.severity)
+    const scheduledAt = scheduleTime ? new Date(scheduleTime).toISOString() : undefined
+    deploy(deployTarget.kb_id, deployTarget.title, deployTarget.severity, scheduledAt)
     setDeployTarget(null)
+    setScheduleTime('')
     handleDeepScan()
   }
 
   const handleBulkDeploy = async () => {
     setShowBulkConfirm(false)
     setBulkDeploying(true)
+    const scheduledAt = bulkScheduleTime ? new Date(bulkScheduleTime).toISOString() : undefined
     for (const u of selectedUpdates) {
-      await deploy(u.kb_id, u.title, u.severity)
+      await deploy(u.kb_id, u.title, u.severity, scheduledAt)
     }
+    setBulkScheduleTime('')
     setBulkDeploying(false)
     setSelectedIndices([])
     handleDeepScan()
@@ -116,9 +123,11 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
   const handleDeployAll = async () => {
     setShowDeployAllConfirm(false)
     setBulkDeploying(true)
+    const scheduledAt = allScheduleTime ? new Date(allScheduleTime).toISOString() : undefined
     for (const u of updates) {
-      await deploy(u.kb_id, u.title, u.severity)
+      await deploy(u.kb_id, u.title, u.severity, scheduledAt)
     }
+    setAllScheduleTime('')
     setBulkDeploying(false)
     handleDeepScan()
   }
@@ -308,32 +317,104 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
         </>
       )}
 
-      <ConfirmDialog
-        open={!!deployTarget}
-        title={`Deploy ${deployTarget?.kb_id ?? ''}`}
-        message={`Install ${deployTarget?.title ?? ''} on ${hostname ?? hostId}?`}
-        confirmLabel="Deploy"
-        onConfirm={handleConfirmDeploy}
-        onCancel={() => setDeployTarget(null)}
-      />
+      {deployTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setDeployTarget(null); setScheduleTime('') }}>
+          <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-white mb-2">Deploy {deployTarget.kb_id}</h2>
+            <p className="text-sm text-exia-text-secondary mb-4">{deployTarget.title}</p>
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
+              <input
+                type="datetime-local"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+              />
+              <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setDeployTarget(null); setScheduleTime('') }}
+                className="rounded-lg border border-exia-border/40 px-4 py-2 text-sm font-medium text-exia-text-secondary transition-colors hover:bg-exia-elevated"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeploy}
+                className="rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90"
+              >
+                {scheduleTime ? `Schedule for ${new Date(scheduleTime).toLocaleDateString()}` : 'Deploy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <ConfirmDialog
-        open={showBulkConfirm}
-        title="Bulk Deploy"
-        message={`Install ${selectedIndices.length} selected update(s) on this host?`}
-        confirmLabel={`Deploy ${selectedIndices.length}`}
-        onConfirm={handleBulkDeploy}
-        onCancel={() => setShowBulkConfirm(false)}
-      />
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShowBulkConfirm(false); setBulkScheduleTime('') }}>
+          <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-white mb-2">Bulk Deploy</h2>
+            <p className="text-sm text-exia-text-secondary mb-4">Install {selectedIndices.length} selected update(s) on this host?</p>
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
+              <input
+                type="datetime-local"
+                value={bulkScheduleTime}
+                onChange={(e) => setBulkScheduleTime(e.target.value)}
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+              />
+              <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowBulkConfirm(false); setBulkScheduleTime('') }}
+                className="rounded-lg border border-exia-border/40 px-4 py-2 text-sm font-medium text-exia-text-secondary transition-colors hover:bg-exia-elevated"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeploy}
+                className="rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90"
+              >
+                {bulkScheduleTime ? `Schedule ${selectedIndices.length} updates` : `Deploy ${selectedIndices.length} updates`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <ConfirmDialog
-        open={showDeployAllConfirm}
-        title="Deploy All"
-        message={`Install all ${updates.length} missing update(s) on this host?`}
-        confirmLabel={`Deploy All ${updates.length}`}
-        onConfirm={handleDeployAll}
-        onCancel={() => setShowDeployAllConfirm(false)}
-      />
+      {showDeployAllConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShowDeployAllConfirm(false); setAllScheduleTime('') }}>
+          <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-white mb-2">Deploy All</h2>
+            <p className="text-sm text-exia-text-secondary mb-4">Install all {updates.length} missing update(s) on this host?</p>
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
+              <input
+                type="datetime-local"
+                value={allScheduleTime}
+                onChange={(e) => setAllScheduleTime(e.target.value)}
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+              />
+              <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowDeployAllConfirm(false); setAllScheduleTime('') }}
+                className="rounded-lg border border-exia-border/40 px-4 py-2 text-sm font-medium text-exia-text-secondary transition-colors hover:bg-exia-elevated"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeployAll}
+                className="rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90"
+              >
+                {allScheduleTime ? `Schedule all ${updates.length} updates` : `Deploy all ${updates.length} updates`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

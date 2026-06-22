@@ -8,6 +8,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { AuditLogPage } from './pages/AuditLogPage'
 import { InvitesPage } from './pages/InvitesPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DeploymentsPage } from './pages/DeploymentsPage'
 import { GroupsPage } from './pages/GroupsPage'
 import { GroupDetailPage } from './pages/GroupDetailPage'
 import { HostsPage } from './pages/HostsPage'
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="hosts/:hostId/scan" element={<ErrorBoundary><ScanDetailPage /></ErrorBoundary>} />
               <Route path="groups" element={<ErrorBoundary><GroupsPage /></ErrorBoundary>} />
               <Route path="groups/:groupId" element={<ErrorBoundary><GroupDetailPage /></ErrorBoundary>} />
+              <Route path="deployments" element={<ErrorBoundary><DeploymentsPage /></ErrorBoundary>} />
               <Route path="patches" element={<ErrorBoundary><PatchesPage /></ErrorBoundary>} />
               <Route path="patches/:patchId" element={<ErrorBoundary><PatchDetailPage /></ErrorBoundary>} />
               <Route path="audit-log" element={<ErrorBoundary><AuditLogPage /></ErrorBoundary>} />

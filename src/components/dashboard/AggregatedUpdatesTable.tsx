@@ -4,7 +4,6 @@ import { getDashboardMissingUpdates, deployPatch } from '../../api/updates'
 import type { DashboardMissingUpdate } from '../../types/update'
 import { useActiveDeployments } from '../../hooks/useActiveDeployments'
 import { useToast } from '../shared/Toast'
-import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 interface AggregatedUpdate {
   kb_id: string
@@ -31,6 +30,7 @@ export function AggregatedUpdatesTable() {
   const [deployTarget, setDeployTarget] = useState<AggregatedUpdate | null>(null)
   const [deployingKb, setDeployingKb] = useState<string | null>(null)
   const [deployResults, setDeployResults] = useState<Record<string, 'success' | 'failed'>>({})
+  const [scheduleTime, setScheduleTime] = useState('')
   const toast = useToast()
   const { addTask, updateTask } = useActiveDeployments()
 
@@ -67,18 +67,19 @@ export function AggregatedUpdatesTable() {
   const handleDeployAll = async () => {
     if (!deployTarget) return
     const { kb_id, title, severity, affected_hosts } = deployTarget
-    const ag = deployTarget
     setDeployTarget(null)
     setDeployingKb(kb_id)
 
+    const scheduledAt = scheduleTime ? new Date(scheduleTime).toISOString() : undefined
+
     for (const host of affected_hosts) {
       const taskId = addTask(host.host_id, host.hostname, kb_id, title, severity)
-      updateTask(taskId, { status: 'deploying' })
+      updateTask(taskId, { status: scheduledAt ? 'scheduled' : 'deploying' })
       try {
-        const res = await deployPatch(host.host_id, kb_id, title, severity)
+        const res = await deployPatch(host.host_id, kb_id, title, severity, scheduledAt)
         updateTask(taskId, {
-          status: res.status === 'SUCCESS' ? 'success' : 'failed',
-          finishedAt: new Date(),
+          status: scheduledAt ? 'scheduled' : (res.status === 'SUCCESS' ? 'success' : 'failed'),
+          finishedAt: scheduledAt ? undefined : new Date(),
           message: res.details,
         })
       } catch {
@@ -86,10 +87,11 @@ export function AggregatedUpdatesTable() {
       }
     }
 
+    setScheduleTime('')
     setDeployingKb(null)
     setDeployResults((prev) => ({ ...prev, [kb_id]: 'success' }))
     setTimeout(() => setDeployResults((prev) => { const n = { ...prev }; delete n[kb_id]; return n }), 5000)
-    toast.success(`${kb_id} deployed to ${affected_hosts.length} host(s)`)
+    toast.success(scheduledAt ? `${kb_id} scheduled for ${affected_hosts.length} host(s)` : `${kb_id} deployed to ${affected_hosts.length} host(s)`)
     fetchUpdates()
   }
 
@@ -216,18 +218,48 @@ export function AggregatedUpdatesTable() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!deployTarget}
-        title={`Deploy ${deployTarget?.kb_id ?? ''}`}
-        message={
-          deployTarget
-            ? `Install this update on ${deployTarget.affected_hosts.length} host(s)?\n${deployTarget.affected_hosts.map((h) => `  • ${h.hostname}`).join('\n')}`
-            : ''
-        }
-        confirmLabel={`Deploy to ${deployTarget?.affected_hosts.length ?? 0} host(s)`}
-        onConfirm={handleDeployAll}
-        onCancel={() => setDeployTarget(null)}
-      />
+      {deployTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setDeployTarget(null); setScheduleTime('') }}>
+          <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-white mb-2">Deploy {deployTarget.kb_id}</h2>
+            <p className="text-sm text-exia-text-secondary mb-4">
+              Install on {deployTarget.affected_hosts.length} host(s):
+            </p>
+            <div className="mb-4 max-h-32 overflow-y-auto space-y-1">
+              {deployTarget.affected_hosts.map((h) => (
+                <div key={h.host_id} className="flex items-center gap-2 text-xs text-exia-text-muted">
+                  <Server size={10} />
+                  <span>{h.hostname}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
+              <input
+                type="datetime-local"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+              />
+              <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setDeployTarget(null); setScheduleTime('') }}
+                className="rounded-lg border border-exia-border/40 px-4 py-2 text-sm font-medium text-exia-text-secondary transition-colors hover:bg-exia-elevated"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeployAll}
+                className="rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90"
+              >
+                {scheduleTime ? `Schedule for ${new Date(scheduleTime).toLocaleDateString()}` : `Deploy to ${deployTarget.affected_hosts.length} host(s)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
