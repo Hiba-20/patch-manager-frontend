@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { ToastProvider } from './components/shared/Toast'
+import { ActiveDeploymentsProvider } from './hooks/useActiveDeployments'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppLayout } from './components/layout/AppLayout'
@@ -21,6 +22,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
+        <ActiveDeploymentsProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -38,6 +40,7 @@ export default function App() {
             </Route>
           </Route>
         </Routes>
+        </ActiveDeploymentsProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHosts } from '../hooks/useHosts'
 import { DataTable } from '../components/shared/DataTable'
@@ -7,7 +7,8 @@ import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
-import { Server, Monitor, Terminal, ChevronRight, X } from 'lucide-react'
+import { getDashboardMissingUpdates } from '../api/updates'
+import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { HostResponse } from '../types/host'
 
@@ -21,6 +22,19 @@ export function HostsPage() {
   const { data: hosts, loading, error } = useHosts()
   const navigate = useNavigate()
   const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    getDashboardMissingUpdates()
+      .then((res) => {
+        const counts: Record<string, number> = {}
+        for (const u of res.updates) {
+          counts[u.host_id] = (counts[u.host_id] ?? 0) + 1
+        }
+        setPendingCounts(counts)
+      })
+      .catch(() => {})
+  }, [])
 
   const osTypes = useMemo(() => getUniqueOsTypes(hosts), [hosts])
   const statuses = useMemo(() => getUniqueStatuses(hosts), [hosts])
@@ -67,6 +81,21 @@ export function HostsPage() {
       cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
     },
     {
+      header: 'Pending',
+      accessorKey: 'id',
+      cell: ({ row }) => {
+        const count = pendingCounts[row.original.id] ?? 0
+        if (count === 0) return <span className="text-xs text-exia-text-muted">—</span>
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full border border-exia-amber/25 bg-exia-amber/10 px-2 py-0.5 text-[11px] font-semibold text-exia-amber">
+            <AlertTriangle size={10} />
+            {count}
+          </span>
+        )
+      },
+      enableSorting: false,
+    },
+    {
       header: 'Registered',
       accessorKey: 'created_at',
       cell: ({ getValue }) => {
@@ -85,7 +114,7 @@ export function HostsPage() {
         <ChevronRight size={16} className="ml-auto text-exia-text-muted opacity-0 group-hover:opacity-100 group-hover:text-exia-cyan transition-all" />
       ),
     },
-  ], [])
+  ], [pendingCounts])
 
   const activeFilterCount = [filters.search, filters.osType, filters.status].filter(Boolean).length
 

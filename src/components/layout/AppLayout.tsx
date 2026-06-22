@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { CommandPalette } from './CommandPalette'
+import { ActiveDeploymentsPanel } from '../dashboard/ActiveDeploymentsPanel'
 
 export function AppLayout() {
   return (
@@ -19,6 +20,7 @@ export function AppLayout() {
         <div className="relative z-10 flex flex-1 flex-col">
           <Outlet />
         </div>
+        <ActiveDeploymentsPanel />
       </main>
     </div>
   )

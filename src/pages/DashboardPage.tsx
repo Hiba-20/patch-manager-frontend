@@ -1,11 +1,11 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp } from 'lucide-react'
+import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp, Info } from 'lucide-react'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { useTrendHistory } from '../hooks/useTrendHistory'
 import { StatsCard } from '../components/shared/StatsCard'
 import { ComplianceTrendChart } from '../components/dashboard/ComplianceTrendChart'
 import { SeverityBreakdownChart } from '../components/dashboard/SeverityBreakdownChart'
-import { MissingUpdatesCard } from '../components/dashboard/MissingUpdatesCard'
+import { AggregatedUpdatesTable } from '../components/dashboard/AggregatedUpdatesTable'
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
@@ -262,7 +262,16 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <MissingUpdatesCard />
+        <div className="rounded-lg border border-exia-cyan/15 bg-exia-cyan/[0.04] px-4 py-3 flex items-start gap-3">
+          <Info size={14} className="text-exia-cyan mt-0.5 flex-shrink-0" />
+          <p className="text-[11px] text-exia-text-secondary leading-relaxed">
+            Scaling to 200+ hosts? This KB-centric view lets you patch by update rather than by machine.
+            For enterprise caching, pair with <span className="font-semibold text-exia-cyan">WSUS</span> or
+            {' '}<span className="font-semibold text-exia-cyan">Microsoft Configuration Manager</span>.
+          </p>
+        </div>
+
+        <AggregatedUpdatesTable />
       </div>
     </>
   )
