@@ -17,6 +17,7 @@ export interface RegisterRequest {
   username: string
   email: string
   password: string
+  invite_code: string
 }
 
 export async function login(req: LoginRequest): Promise<AuthResponse> {

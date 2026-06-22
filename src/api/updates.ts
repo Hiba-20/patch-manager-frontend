@@ -2,12 +2,12 @@ import apiClient from './client'
 import type { DashboardMissingUpdatesResponse, DeployPatchResponse, MissingUpdatesResponse } from '../types/update'
 
 export async function getMissingUpdates(hostId: string): Promise<MissingUpdatesResponse> {
-  const { data } = await apiClient.get<MissingUpdatesResponse>(`/hosts/${hostId}/fast-updates`)
+  const { data } = await apiClient.get<MissingUpdatesResponse>(`/hosts/${hostId}/missing-updates`)
   return data
 }
 
 export async function getDeepScanUpdates(hostId: string): Promise<MissingUpdatesResponse> {
-  const { data } = await apiClient.get<MissingUpdatesResponse>(`/hosts/${hostId}/missing-updates`)
+  const { data } = await apiClient.get<MissingUpdatesResponse>(`/hosts/${hostId}/fast-updates`)
   return data
 }
 

@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, AlertTriangle, Bug, Plus, X } from 'lucide-react'
 import { DataTable } from '../components/shared/DataTable'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { getPatches, type PatchResponse } from '../api/patches'
@@ -122,7 +122,7 @@ export function PatchesPage() {
     [],
   )
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TableSkeleton rows={12} cols={5} />
   if (error) return <><TopBar title="Patches" /><div className="p-8"><ErrorAlert message={error} /></div></>
 
   return (

@@ -13,6 +13,8 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; 
   pending:   { bg: 'bg-exia-amber/10', text: 'text-exia-amber',   border: 'border-exia-amber/25',  dot: 'bg-exia-amber' },
   failed:    { bg: 'bg-exia-red/10',   text: 'text-exia-red',     border: 'border-exia-red/25',    dot: 'bg-exia-red' },
   rollback:  { bg: 'bg-exia-red/10',   text: 'text-exia-red',     border: 'border-exia-red/25',    dot: 'bg-exia-red' },
+  used:      { bg: 'bg-exia-amber/10', text: 'text-exia-amber',   border: 'border-exia-amber/25',  dot: 'bg-exia-amber' },
+  expired:   { bg: 'bg-exia-red/10',   text: 'text-exia-red',     border: 'border-exia-red/25',    dot: 'bg-exia-red' },
 }
 
 const DEFAULT_CONFIG = {

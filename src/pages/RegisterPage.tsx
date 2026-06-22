@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
+import { Shield, Eye, EyeOff, Loader2, AlertCircle, KeyRound, User } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
-export function LoginPage() {
-  const { login } = useAuth()
+export function RegisterPage() {
+  const { register } = useAuth()
   const navigate = useNavigate()
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -17,13 +19,13 @@ export function LoginPage() {
     setError(null)
     setLoading(true)
     try {
-      await login(email, password)
+      await register(username, email, password, inviteCode)
       navigate('/', { replace: true })
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         (err as Error)?.message ??
-        'Login failed'
+        'Registration failed'
       setError(msg)
     } finally {
       setLoading(false)
@@ -45,8 +47,8 @@ export function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-exia-cyan/10 border border-exia-cyan/20 mb-4">
               <Shield size={22} className="text-exia-cyan" />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">Exia Patch Manager</h1>
-            <p className="mt-1 text-xs text-exia-text-secondary">Sign in to your account</p>
+            <h1 className="text-lg font-bold text-white tracking-tight">Create Account</h1>
+            <p className="mt-1 text-xs text-exia-text-secondary">Register a new administrator</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,6 +61,24 @@ export function LoginPage() {
 
             <div>
               <label className="block text-xs font-medium text-exia-text-secondary mb-1.5">
+                Username
+              </label>
+              <div className="relative">
+                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-exia-text-muted" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="jdoe"
+                  required
+                  autoFocus
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1.5">
                 Email
               </label>
               <input
@@ -67,7 +87,6 @@ export function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@exia.tech"
                 required
-                autoFocus
                 className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               />
             </div>
@@ -83,6 +102,7 @@ export function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
                   required
+                  minLength={8}
                   className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-3.5 pr-10 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                 />
                 <button
@@ -92,6 +112,24 @@ export function LoginPage() {
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
+              </div>
+              <p className="mt-1 text-[10px] text-exia-text-muted">At least 8 characters</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-exia-text-secondary mb-1.5">
+                Invite Code
+              </label>
+              <div className="relative">
+                <KeyRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-exia-text-muted" />
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  placeholder="Enter your invite code"
+                  required
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                />
               </div>
             </div>
 
@@ -103,18 +141,18 @@ export function LoginPage() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 size={15} className="animate-spin" />
-                  Signing in\u2026
+                  Creating account...
                 </span>
               ) : (
-                'Sign In'
+                'Create Account'
               )}
             </button>
           </form>
 
           <p className="mt-5 text-center text-xs text-exia-text-secondary">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-exia-cyan hover:text-exia-cyan/80 hover:underline transition-colors">
-              Register
+            Already have an account?{' '}
+            <Link to="/login" className="text-exia-cyan hover:text-exia-cyan/80 hover:underline transition-colors">
+              Sign in
             </Link>
           </p>
 

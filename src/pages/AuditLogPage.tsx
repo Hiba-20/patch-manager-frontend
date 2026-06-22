@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { History, LogIn, LogOut, Scan, Shield, UserPlus, Key, CheckCircle, XCircle, type LucideIcon } from 'lucide-react'
 import { getAuditLogs, type AuditLogResponse } from '../api/audit-logs'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 
@@ -43,7 +43,7 @@ export function AuditLogPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TableSkeleton rows={10} cols={3} />
   if (error) return <><TopBar title="Audit Log" /><div className="p-8"><ErrorAlert message={error} /></div></>
 
   return (

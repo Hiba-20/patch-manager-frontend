@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, X } from 'lucide-react'
 
 interface ConfirmDialogProps {
@@ -38,10 +39,9 @@ export function ConfirmDialog({
     ? 'bg-exia-red hover:bg-exia-red/90'
     : 'bg-exia-cyan hover:bg-exia-cyan/90'
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-sm rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl animate-fade-in">
+  return createPortal(
+    <div onClick={onCancel} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl animate-fade-in">
         <div className="mb-4 flex items-start gap-3">
           {variant === 'danger' && (
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-exia-red/10">
@@ -71,6 +71,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
