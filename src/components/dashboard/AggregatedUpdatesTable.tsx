@@ -15,12 +15,14 @@ interface AggregatedUpdate {
 
 const SEVERITY_COLORS: Record<string, string> = {
   Critical:  'text-exia-red border-exia-red/25 bg-exia-red/10',
+  High:      'text-exia-amber border-exia-amber/25 bg-exia-amber/10',
   Important: 'text-exia-amber border-exia-amber/25 bg-exia-amber/10',
+  Medium:    'text-yellow-400 border-yellow-400/25 bg-yellow-400/10',
   Moderate:  'text-yellow-400 border-yellow-400/25 bg-yellow-400/10',
   Low:       'text-exia-green border-exia-green/25 bg-exia-green/10',
 }
 
-const SEVERITY_ORDER: Record<string, number> = { Critical: 0, Important: 1, Moderate: 2, Low: 3 }
+const SEVERITY_ORDER: Record<string, number> = { Critical: 0, High: 1, Important: 1, Medium: 2, Moderate: 2, Low: 3 }
 
 export function AggregatedUpdatesTable() {
   const [updates, setUpdates] = useState<AggregatedUpdate[]>([])

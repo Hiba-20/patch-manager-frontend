@@ -8,6 +8,7 @@ const STATUS_CONFIG: Record<DeployStatus, { icon: typeof Loader2; color: string;
   success:    { icon: CheckCircle2, color: 'text-exia-green',  label: 'Success' },
   failed:     { icon: XCircle,   color: 'text-exia-red',       label: 'Failed' },
   rebooting:  { icon: RotateCcw, color: 'text-exia-amber',     label: 'Rebooting...' },
+  scheduled:  { icon: Clock,     color: 'text-exia-amber',     label: 'Scheduled' },
 }
 
 function elapsed(startedAt: Date, finishedAt?: Date): string {

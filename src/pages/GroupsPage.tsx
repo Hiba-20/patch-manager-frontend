@@ -187,7 +187,7 @@ export function GroupsPage() {
                   type="text"
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="e.g. Windows Server 2022 machines behind LB"
+                  placeholder="e.g. Windows Server 2022 or Ubuntu 22.04 machines"
                   className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                 />

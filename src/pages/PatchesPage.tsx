@@ -251,7 +251,7 @@ export function PatchesPage() {
                   type="text"
                   value={createData.name}
                   onChange={(e) => setCreateData((d) => ({ ...d, name: e.target.value }))}
-                  placeholder="e.g. KB5034123"
+                  placeholder="e.g. KB5034123 or libssl3"
                   className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
@@ -271,7 +271,7 @@ export function PatchesPage() {
                   type="text"
                   value={createData.vendor}
                   onChange={(e) => setCreateData((d) => ({ ...d, vendor: e.target.value }))}
-                  placeholder="e.g. Microsoft"
+                  placeholder="e.g. Microsoft, Canonical, Red Hat"
                   className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
