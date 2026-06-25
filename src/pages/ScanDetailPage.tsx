@@ -38,7 +38,7 @@ function MetricCard({ icon: Icon, label, value, accent = 'text-exia-cyan' }: {
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">{label}</p>
-          <div className="mt-1 text-base font-semibold text-white">{value}</div>
+          <div className="mt-1 text-base font-semibold text-exia-text-primary">{value}</div>
         </div>
       </div>
     </div>
@@ -94,7 +94,7 @@ function EmptyScanState({ hostId, onLaunch }: { hostId: string; onLaunch: () => 
         <Scan size={36} className="text-exia-text-muted" />
       </div>
       <div className="text-center max-w-sm">
-        <p className="text-lg font-semibold text-white mb-1">No scans yet</p>
+        <p className="text-lg font-semibold text-exia-text-primary mb-1">No scans yet</p>
         <p className="text-sm text-exia-text-secondary">
           Run an inventory scan to detect installed software, hardware specs, and available patches on this host.
         </p>
@@ -140,7 +140,7 @@ function ScanningState({ state, error }: { state: string; error: string | null }
       <div className="text-center max-w-sm">
         {isLaunching && (
           <>
-            <p className="text-lg font-semibold text-white mb-1">Launching scan...</p>
+            <p className="text-lg font-semibold text-exia-text-primary mb-1">Launching scan...</p>
             <p className="text-sm text-exia-text-secondary">Connecting to the host and starting the inventory collection.</p>
             <div className="mt-4 flex justify-center gap-1">
               <span className="h-2 w-2 rounded-full bg-exia-cyan animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -151,7 +151,7 @@ function ScanningState({ state, error }: { state: string; error: string | null }
         )}
         {isScanning && (
           <>
-            <p className="text-lg font-semibold text-white mb-1">Scan in progress...</p>
+            <p className="text-lg font-semibold text-exia-text-primary mb-1">Scan in progress...</p>
             <p className="text-sm text-exia-text-secondary">Gathering system information and checking for available patches.</p>
             <div className="mt-5 flex items-center gap-2 text-xs text-exia-cyan font-mono">
               <RefreshCw size={12} className="animate-spin" />
@@ -428,7 +428,7 @@ export function ScanDetailPage() {
                   <table className="w-full border-collapse font-mono text-xs leading-6">
                     <tbody>
                       {rawLines.map((line, i) => (
-                        <tr key={i} className="group hover:bg-white/[0.02] transition-colors">
+                        <tr key={i} className="group hover:bg-elevated transition-colors">
                           <td
                             className="select-none border-r border-exia-border/20 px-4 py-0 text-right text-exia-text-muted"
                             style={{ width: '3.5rem', color: '#334155', userSelect: 'none' }}

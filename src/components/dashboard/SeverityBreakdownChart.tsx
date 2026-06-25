@@ -17,7 +17,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const d = payload[0].payload
   return (
     <div className="rounded-xl border border-exia-border/60 bg-exia-elevated/90 backdrop-blur-md px-4 py-3 shadow-card-md text-sm">
-      <p className="font-semibold text-white">{d.severity}</p>
+      <p className="font-semibold text-exia-text-primary">{d.severity}</p>
       <p className="text-xs text-exia-text-secondary mt-0.5">
         {d.count} patch{d.count !== 1 ? 'es' : ''}
       </p>
@@ -58,17 +58,17 @@ export function SeverityBreakdownChart({
     <div className="h-[200px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} layout="vertical">
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-          <XAxis type="number" tick={{ fill: '#4a5a78', fontSize: 10 }} tickLine={false} axisLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+          <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} tickLine={false} axisLine={false} />
           <YAxis
             type="category"
             dataKey="severity"
-            tick={{ fill: '#8899b0', fontSize: 11 }}
+            tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={70}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--surface)' }} />
           <Bar dataKey="count" radius={[0, 4, 4, 0]} animationDuration={600} animationEasing="ease-out" barSize={24}>
             {data.map((entry, index) => (
               <Cell key={index} fill={entry.fill} />

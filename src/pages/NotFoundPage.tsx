@@ -14,7 +14,7 @@ export function NotFoundPage() {
           </span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white">Page not found</h1>
+        <h1 className="text-2xl font-bold text-exia-text-primary">Page not found</h1>
 
         <p className="text-sm text-exia-text-muted leading-relaxed">
           The page you're looking for doesn't exist or has been moved.

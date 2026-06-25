@@ -54,7 +54,7 @@ export function EventTimeline({ events }: EventTimelineProps) {
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-exia-text-primary truncate">
                   {getEventLabel(event)}
                 </p>
                 <ArrowRight size={10} className="text-exia-text-muted flex-shrink-0" />

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDeployments, type DeploymentResponse } from '../api/patches'
+import { getDeployments, getDeploymentApprovalLog, type DeploymentResponse, type ApprovalLogEntry } from '../api/patches'
 import { TopBar } from '../components/layout/TopBar'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
-import { ArrowLeft, Server, Shield, Clock, PlayCircle, CheckCircle2, XCircle, Loader2, AlertTriangle, User } from 'lucide-react'
+import { ArrowLeft, Server, Shield, Clock, PlayCircle, CheckCircle2, XCircle, Loader2, AlertTriangle, User, MessageSquare } from 'lucide-react'
+import { timeAgo } from '../utils/relativeTime'
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-exia-amber/10 text-exia-amber border-exia-amber/25',
@@ -21,6 +22,8 @@ export function DeploymentDetailPage() {
   const [dep, setDep] = useState<DeploymentResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [approvalLogs, setApprovalLogs] = useState<ApprovalLogEntry[]>([])
+  const [logsLoading, setLogsLoading] = useState(false)
 
   useEffect(() => {
     if (!deploymentId) return
@@ -31,6 +34,11 @@ export function DeploymentDetailPage() {
         const found = all.find((d) => d.id === deploymentId)
         if (!found) throw new Error('Deployment not found')
         setDep(found)
+        setLogsLoading(true)
+        getDeploymentApprovalLog(deploymentId)
+          .then(setApprovalLogs)
+          .catch(() => {})
+          .finally(() => setLogsLoading(false))
       })
       .catch((e) => setError(e?.response?.data?.detail ?? e?.message ?? 'Failed to load deployment'))
       .finally(() => setLoading(false))
@@ -79,7 +87,7 @@ export function DeploymentDetailPage() {
             <ArrowLeft size={15} />
           </button>
           <div>
-            <h2 className="text-lg font-bold text-white">{dep.patch_name}</h2>
+            <h2 className="text-lg font-bold text-exia-text-primary">{dep.patch_name}</h2>
             <div className="flex items-center gap-2 mt-1">
               <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusColor}`}>
                 {dep.status === 'FAILED' && <AlertTriangle size={10} />}
@@ -100,7 +108,7 @@ export function DeploymentDetailPage() {
                   <Shield size={12} />
                   Patch
                 </div>
-                <span className="text-sm font-medium text-white">{dep.patch_name}</span>
+                <span className="text-sm font-medium text-exia-text-primary">{dep.patch_name}</span>
               </div>
               {dep.severity && (
                 <div className="flex items-center justify-between">
@@ -108,7 +116,7 @@ export function DeploymentDetailPage() {
                     <AlertTriangle size={12} />
                     Severity
                   </div>
-                  <span className="text-sm font-medium text-white">{dep.severity}</span>
+                  <span className="text-sm font-medium text-exia-text-primary">{dep.severity}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -129,7 +137,7 @@ export function DeploymentDetailPage() {
                     <User size={12} />
                     Approved by
                   </div>
-                  <span className="text-sm font-medium text-white">{dep.approved_by}</span>
+                  <span className="text-sm font-medium text-exia-text-primary">{dep.approved_by}</span>
                 </div>
               )}
             </div>
@@ -160,7 +168,7 @@ export function DeploymentDetailPage() {
                     <div className="flex-1 min-w-0 pb-3">
                       <p className="text-xs font-medium text-exia-text-secondary">{item.label}</p>
                       <p className="text-xs text-exia-text-muted mt-0.5">
-                        {item.time ? new Date(item.time).toLocaleString() : '—'}
+                        {item.time ? `${timeAgo(item.time)} (${new Date(item.time).toLocaleString()})` : '\u2014'}
                       </p>
                     </div>
                   </div>
@@ -173,12 +181,68 @@ export function DeploymentDetailPage() {
         {dep.logs && (
           <div className="depth-card rounded-xl p-6">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-exia-green/20 to-transparent rounded-t-xl" />
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-exia-text-secondary mb-4">Logs</p>
-            <pre className="rounded-lg bg-black/40 p-4 text-[11px] text-exia-text-secondary font-mono whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto leading-relaxed">
-              {dep.logs}
-            </pre>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-exia-text-secondary mb-4">Ansible Logs</p>
+            <div className="rounded-lg bg-black/80 p-4 max-h-96 overflow-y-auto font-mono text-[11px] leading-relaxed terminal-scroll">
+              {dep.logs.split('\n').map((line, i) => {
+                let color = 'text-gray-400'
+                if (/error|failed|fatal|critical/i.test(line)) color = 'text-red-400'
+                else if (/warn|warning/i.test(line)) color = 'text-amber-400'
+                else if (/ok|success|completed/i.test(line)) color = 'text-green-400'
+                else if (/changed/i.test(line)) color = 'text-exia-cyan'
+                else if (/skipped/i.test(line)) color = 'text-gray-500'
+                else if (/^\[/i.test(line)) color = 'text-exia-cyan font-semibold'
+                return (
+                  <div key={i} className={`${color} whitespace-pre-wrap`}>
+                    <span className="select-none text-gray-600 mr-3 w-6 inline-block text-right">{i + 1}</span>
+                    {line || <span className="text-gray-600">&nbsp;</span>}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
+
+        <div className="depth-card rounded-xl p-6">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-exia-amber/20 to-transparent rounded-t-xl" />
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-exia-text-secondary mb-4">Approval History</p>
+          {logsLoading ? (
+            <div className="flex items-center justify-center py-6 text-exia-text-muted">
+              <Loader2 size={16} className="animate-spin mr-2" />
+              Loading...
+            </div>
+          ) : approvalLogs.length === 0 ? (
+            <p className="text-xs text-exia-text-muted py-4">No approval records found.</p>
+          ) : (
+            <div className="space-y-3">
+              {approvalLogs.map((log) => (
+                <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-exia-elevated/50 border border-exia-border/20">
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    log.action === 'APPROVED' ? 'bg-exia-green/10 text-exia-green' : 'bg-exia-red/10 text-exia-red'
+                  }`}>
+                    {log.action === 'APPROVED' ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-exia-text-primary">{log.admin_name}</span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                        log.action === 'APPROVED' ? 'bg-exia-green/10 text-exia-green' : 'bg-exia-red/10 text-exia-red'
+                      }`}>
+                        {log.action}
+                      </span>
+                      <span className="text-[10px] text-exia-text-muted">{timeAgo(log.created_at)}</span>
+                    </div>
+                    {log.comment && (
+                      <div className="flex items-start gap-1.5 mt-1.5 text-xs text-exia-text-secondary">
+                        <MessageSquare size={11} className="mt-0.5 shrink-0 text-exia-text-muted" />
+                        <span>{log.comment}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

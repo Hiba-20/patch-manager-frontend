@@ -47,7 +47,7 @@ export function RegisterPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-exia-cyan/10 border border-exia-cyan/20 mb-4">
               <Shield size={22} className="text-exia-cyan" />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">Create Account</h1>
+            <h1 className="text-lg font-bold text-exia-text-primary tracking-tight">Create Account</h1>
             <p className="mt-1 text-xs text-exia-text-secondary">Register a new administrator</p>
           </div>
 
@@ -72,7 +72,7 @@ export function RegisterPage() {
                   placeholder="jdoe"
                   required
                   autoFocus
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                 />
               </div>
             </div>
@@ -87,7 +87,7 @@ export function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@exia.tech"
                 required
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               />
             </div>
 
@@ -103,7 +103,7 @@ export function RegisterPage() {
                   placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
                   required
                   minLength={8}
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-3.5 pr-10 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-3.5 pr-10 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                 />
                 <button
                   type="button"
@@ -128,7 +128,7 @@ export function RegisterPage() {
                   onChange={(e) => setInviteCode(e.target.value)}
                   placeholder="Enter your invite code"
                   required
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-9 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                 />
               </div>
             </div>

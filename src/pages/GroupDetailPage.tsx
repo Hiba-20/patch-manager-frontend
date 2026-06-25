@@ -102,7 +102,7 @@ export function GroupDetailPage() {
             <ArrowLeft size={15} />
           </button>
           <div>
-            <h2 className="text-lg font-bold text-white">{group.name}</h2>
+            <h2 className="text-lg font-bold text-exia-text-primary">{group.name}</h2>
             {group.description && (
               <p className="text-sm text-exia-text-muted">{group.description}</p>
             )}
@@ -152,7 +152,7 @@ export function GroupDetailPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Server size={13} className="text-exia-text-muted" />
-                        <span className="text-sm font-medium text-white">{host.hostname}</span>
+                        <span className="text-sm font-medium text-exia-text-primary">{host.hostname}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-exia-text-secondary">{host.ip_address}</td>
@@ -187,7 +187,7 @@ export function GroupDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
           <div className="w-full max-w-lg rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-white">Add Host to Group</h2>
+              <h2 className="text-base font-bold text-exia-text-primary">Add Host to Group</h2>
               <button onClick={() => setShowAddModal(false)} className="text-exia-text-muted hover:text-exia-text-secondary transition-colors">
                 <X size={16} />
               </button>
@@ -205,7 +205,7 @@ export function GroupDetailPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Server size={13} className="text-exia-text-muted" />
-                      <span className="text-sm font-medium text-white">{host.hostname}</span>
+                      <span className="text-sm font-medium text-exia-text-primary">{host.hostname}</span>
                       <span className="text-xs text-exia-text-muted">{host.ip_address}</span>
                     </div>
                     <Check size={14} className="text-exia-cyan opacity-0 group-hover:opacity-100" />

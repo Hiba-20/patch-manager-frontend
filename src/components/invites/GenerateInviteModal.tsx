@@ -67,18 +67,18 @@ export function GenerateInviteModal({ open, onClose, onCreated }: Props) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-md rounded-xl border border-exia-border/60 shadow-card-lg overflow-hidden"
-        style={{ background: '#0b1120' }}
+        style={{ background: 'var(--card)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-exia-cyan/30 to-transparent" />
 
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-base font-bold text-white tracking-tight">
+          <h2 className="text-base font-bold text-exia-text-primary tracking-tight">
             {result ? 'Invite Created' : 'Generate Invite'}
           </h2>
           <button
             onClick={handleClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-exia-text-muted hover:text-exia-text-secondary hover:bg-white/[0.05] transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-exia-text-muted hover:text-exia-text-secondary hover:bg-elevated transition-colors"
           >
             <X size={15} />
           </button>
@@ -100,7 +100,7 @@ export function GenerateInviteModal({ open, onClose, onCreated }: Props) {
               <select
                 value={maxUses}
                 onChange={(e) => setMaxUses(Number(e.target.value))}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               >
                 <option value={1}>Single use</option>
                 <option value={5}>5 uses</option>
@@ -118,7 +118,7 @@ export function GenerateInviteModal({ open, onClose, onCreated }: Props) {
               <select
                 value={expiresInHours}
                 onChange={(e) => setExpiresInHours(Number(e.target.value))}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               >
                 <option value={1}>1 hour</option>
                 <option value={6}>6 hours</option>
@@ -177,7 +177,7 @@ export function GenerateInviteModal({ open, onClose, onCreated }: Props) {
 
             <button
               onClick={handleClose}
-              className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2.5 text-sm font-medium text-exia-text-secondary hover:text-white hover:border-exia-cyan/30 transition-colors"
+              className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2.5 text-sm font-medium text-exia-text-secondary hover:text-exia-text-primary hover:border-exia-cyan/30 transition-colors"
             >
               Done
             </button>

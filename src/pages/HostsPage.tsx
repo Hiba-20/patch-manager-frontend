@@ -10,12 +10,14 @@ import { TopBar } from '../components/layout/TopBar'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useToast } from '../components/shared/Toast'
 import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
-import { getDashboardMissingUpdates } from '../api/updates'
+import { getRiskMatrixReport } from '../api/reports'
+import type { HostRiskRow } from '../types/report'
 import { AddHostModal } from '../components/hosts/AddHostModal'
 import { EditHostModal } from '../components/hosts/EditHostModal'
 import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { HostResponse } from '../types/host'
+import { timeAgo } from '../utils/relativeTime'
 
 const OS_ICON: Record<string, typeof Server> = {
   windows: Monitor,
@@ -27,7 +29,7 @@ export function HostsPage() {
   const { data: hosts, loading, error, refetch } = useHosts()
   const navigate = useNavigate()
   const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
-  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({})
+  const [riskMap, setRiskMap] = useState<Record<string, HostRiskRow>>({})
   const [showAddModal, setShowAddModal] = useState(false)
   const [editTarget, setEditTarget] = useState<HostResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<HostResponse | null>(null)
@@ -35,13 +37,13 @@ export function HostsPage() {
   const toast = useToast()
 
   const load = useCallback(() => {
-    getDashboardMissingUpdates()
+    getRiskMatrixReport()
       .then((res) => {
-        const counts: Record<string, number> = {}
-        for (const u of res.updates) {
-          counts[u.host_id] = (counts[u.host_id] ?? 0) + 1
+        const map: Record<string, HostRiskRow> = {}
+        for (const r of res.rows) {
+          map[r.host_id] = r
         }
-        setPendingCounts(counts)
+        setRiskMap(map)
       })
       .catch(() => {})
   }, [])
@@ -64,7 +66,7 @@ export function HostsPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-exia-elevated border border-exia-border/40 text-exia-text-secondary group-hover:border-exia-cyan/20 group-hover:text-exia-cyan transition-colors">
               <OsIcon size={14} />
             </div>
-            <span className="font-semibold text-white group-hover:text-exia-cyan transition-colors">
+            <span className="font-semibold text-exia-text-primary group-hover:text-exia-cyan transition-colors">
               {host.hostname}
             </span>
           </div>
@@ -93,16 +95,25 @@ export function HostsPage() {
       cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
     },
     {
-      header: 'Pending',
+      header: 'Risk Score',
       accessorKey: 'id',
       cell: ({ row }) => {
-        const count = pendingCounts[row.original.id] ?? 0
-        if (count === 0) return <span className="text-xs text-exia-text-muted">—</span>
+        const risk = riskMap[row.original.id]
+        if (!risk || risk.risk_level === 'UNKNOWN') return <span className="text-xs text-muted">—</span>
+        
+        let colorClass = 'text-green'
+        let bgClass = 'bg-green-500/10'
+        if (risk.risk_level === 'CRITICAL') { colorClass = 'text-danger'; bgClass = 'bg-red-500/10' }
+        else if (risk.risk_level === 'HIGH') { colorClass = 'text-amber'; bgClass = 'bg-amber-500/10' }
+        else if (risk.risk_level === 'MEDIUM') { colorClass = 'text-amber'; bgClass = 'bg-amber-500/10' }
+        
         return (
-          <span className="inline-flex items-center gap-1 rounded-full border border-exia-amber/25 bg-exia-amber/10 px-2 py-0.5 text-[11px] font-semibold text-exia-amber">
-            <AlertTriangle size={10} />
-            {count}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${bgClass} ${colorClass}`}>
+              {risk.risk_level}
+            </span>
+            <span className="text-[10px] text-secondary font-mono">Score: {risk.risk_score}</span>
+          </div>
         )
       },
       enableSorting: false,
@@ -113,8 +124,8 @@ export function HostsPage() {
       cell: ({ getValue }) => {
         const date = getValue() as string
         return (
-          <span className="text-xs text-exia-text-muted">
-            {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          <span className="text-xs text-exia-text-muted" title={new Date(date).toLocaleString()}>
+            {timeAgo(date)}
           </span>
         )
       },
@@ -146,7 +157,7 @@ export function HostsPage() {
         <ChevronRight size={16} className="ml-auto text-exia-text-muted opacity-0 group-hover:opacity-100 group-hover:text-exia-cyan transition-all" />
       ),
     },
-  ], [pendingCounts])
+  ], [riskMap])
 
   const handleDelete = async () => {
     if (!deleteTarget) return

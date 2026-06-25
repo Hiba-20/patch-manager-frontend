@@ -40,7 +40,7 @@ export function PackageList({ inventoryData }: PackageListProps) {
       cell: ({ getValue }) => (
         <div className="flex items-center gap-2">
           <Package size={13} className="text-exia-text-muted" />
-          <span className="font-medium text-white">{getValue() as string}</span>
+          <span className="font-medium text-exia-text-primary">{getValue() as string}</span>
         </div>
       ),
     },

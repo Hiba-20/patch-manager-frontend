@@ -7,8 +7,9 @@ import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useToast } from '../components/shared/Toast'
-import { getPatches, createPatch, deletePatch, type PatchResponse } from '../api/patches'
+import { getPatches, createPatch, deletePatch, type PatchResponse, type PatchCreate } from '../api/patches'
 import type { ColumnDef } from '@tanstack/react-table'
+import { timeAgo } from '../utils/relativeTime'
 
 const SEVERITY_CONFIG: Record<string, { bg: string; text: string; border: string }> = {
   Critical: { bg: 'bg-exia-red/10',   text: 'text-exia-red',   border: 'border-exia-red/25' },
@@ -28,6 +29,8 @@ function SeverityBadge({ severity }: { severity: string | null }) {
   )
 }
 
+const CLASSIFICATIONS = ['', 'Security', 'Critical', 'Feature', 'Optional', 'Driver'] as const
+
 export function PatchesPage() {
   const navigate = useNavigate()
   const toast = useToast()
@@ -35,8 +38,9 @@ export function PatchesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [classificationFilter, setClassificationFilter] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createData, setCreateData] = useState({ name: '', version: '1.0', vendor: '', severity: 'Medium', os_type: 'windows', cve_input: '' })
+  const [createData, setCreateData] = useState({ name: '', version: '1.0', vendor: '', severity: 'Medium', classification: '', os_type: 'windows', cve_input: '' })
   const [creating, setCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PatchResponse | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -44,11 +48,11 @@ export function PatchesPage() {
   const loadPatches = useCallback(() => {
     setLoading(true)
     setError(null)
-    getPatches()
+    getPatches(search || undefined, classificationFilter || undefined)
       .then(setPatches)
       .catch((e) => setError(e?.response?.data?.detail ?? e?.message ?? 'Failed to load patches'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [search, classificationFilter])
 
   useEffect(() => { loadPatches() }, [loadPatches])
 
@@ -61,12 +65,13 @@ export function PatchesPage() {
         version: createData.version,
         vendor: createData.vendor || undefined,
         severity: createData.severity,
+        classification: createData.classification || undefined,
         os_type: createData.os_type,
         cve_references: cves,
       })
       toast.success('Patch created')
       setShowCreateModal(false)
-      setCreateData({ name: '', version: '1.0', vendor: '', severity: 'Medium', os_type: 'windows', cve_input: '' })
+      setCreateData({ name: '', version: '1.0', vendor: '', severity: 'Medium', classification: '', os_type: 'windows', cve_input: '' })
       loadPatches()
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? (e as Error)?.message ?? 'Failed to create patch'
@@ -114,7 +119,7 @@ export function PatchesPage() {
               <Shield size={14} />
             </div>
             <div>
-              <span className="font-semibold text-white">{row.original.name}</span>
+              <span className="font-semibold text-exia-text-primary">{row.original.name}</span>
               <span className="ml-2 font-mono text-[11px] text-exia-cyan">v{row.original.version}</span>
             </div>
           </div>
@@ -131,6 +136,20 @@ export function PatchesPage() {
         header: 'Severity',
         accessorKey: 'severity',
         cell: ({ getValue }) => <SeverityBadge severity={getValue() as string | null} />,
+      },
+      {
+        header: 'Classification',
+        accessorKey: 'classification',
+        cell: ({ getValue }) => {
+          const v = getValue() as string | null
+          return v ? (
+            <span className="inline-flex items-center rounded-md border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[11px] font-medium text-exia-text-secondary">
+              {v}
+            </span>
+          ) : (
+            <span className="text-exia-text-muted">&mdash;</span>
+          )
+        },
       },
       {
         header: 'CVEs',
@@ -161,11 +180,14 @@ export function PatchesPage() {
       {
         header: 'Created',
         accessorKey: 'created_at',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-exia-text-muted">
-            {new Date(getValue() as string).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-          </span>
-        ),
+        cell: ({ getValue }) => {
+          const d = getValue() as string
+          return (
+            <span className="text-xs text-exia-text-muted" title={new Date(d).toLocaleString()}>
+              {timeAgo(d)}
+            </span>
+          )
+        },
       },
       {
         id: 'actions',
@@ -194,22 +216,34 @@ export function PatchesPage() {
 
       <div className="space-y-5 p-8 animate-slide-up">
         <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-xs">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, vendor, severity, CVE\u2026"
-              className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2 pl-3 pr-8 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-exia-text-muted hover:text-exia-text-secondary transition-colors"
-              >
-                <X size={14} />
-              </button>
-            )}
+          <div className="flex items-center gap-3 flex-1">
+            <div className="relative max-w-xs">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, vendor, severity, CVE\u2026"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2 pl-3 pr-8 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-exia-text-muted hover:text-exia-text-secondary transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <select
+              value={classificationFilter}
+              onChange={(e) => setClassificationFilter(e.target.value)}
+              className="rounded-lg border border-exia-border/50 bg-exia-card py-2 pl-3 pr-8 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+            >
+              <option value="">All Classifications</option>
+              {CLASSIFICATIONS.filter(Boolean).map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -239,7 +273,7 @@ export function PatchesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-white">Create Patch</h2>
+              <h2 className="text-base font-bold text-exia-text-primary">Create Patch</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-exia-text-muted hover:text-exia-text-secondary transition-colors">
                 <X size={16} />
               </button>
@@ -252,7 +286,7 @@ export function PatchesPage() {
                   value={createData.name}
                   onChange={(e) => setCreateData((d) => ({ ...d, name: e.target.value }))}
                   placeholder="e.g. KB5034123 or libssl3"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
               <div>
@@ -262,7 +296,7 @@ export function PatchesPage() {
                   value={createData.version}
                   onChange={(e) => setCreateData((d) => ({ ...d, version: e.target.value }))}
                   placeholder="1.0"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
               <div>
@@ -272,7 +306,7 @@ export function PatchesPage() {
                   value={createData.vendor}
                   onChange={(e) => setCreateData((d) => ({ ...d, vendor: e.target.value }))}
                   placeholder="e.g. Microsoft, Canonical, Red Hat"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
               <div>
@@ -280,7 +314,7 @@ export function PatchesPage() {
                 <select
                   value={createData.severity}
                   onChange={(e) => setCreateData((d) => ({ ...d, severity: e.target.value }))}
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 >
                   <option value="Critical">Critical</option>
                   <option value="High">High</option>
@@ -314,13 +348,26 @@ export function PatchesPage() {
                 </div>
               </div>
               <div>
+                <label className="block text-xs font-medium text-exia-text-secondary mb-1">Classification</label>
+                <select
+                  value={createData.classification}
+                  onChange={(e) => setCreateData((d) => ({ ...d, classification: e.target.value }))}
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                >
+                  <option value="">None</option>
+                  {CLASSIFICATIONS.filter(Boolean).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-exia-text-secondary mb-1">CVE References (comma-separated)</label>
                 <input
                   type="text"
                   value={createData.cve_input}
                   onChange={(e) => setCreateData((d) => ({ ...d, cve_input: e.target.value }))}
                   placeholder="e.g. CVE-2024-1234, CVE-2024-5678"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                 />
               </div>
             </div>

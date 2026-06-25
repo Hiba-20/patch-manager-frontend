@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDeployments, approveDeployment, rejectDeployment, cancelDeployment, retryDeployment, type DeploymentResponse } from '../api/patches'
+import { getDeployments, approveDeployment, rejectDeployment, cancelDeployment, retryDeployment, bulkApproveDeployments, bulkRejectDeployments, type DeploymentResponse } from '../api/patches'
 import { TopBar } from '../components/layout/TopBar'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { useToast } from '../components/shared/Toast'
+import { BulkActionConfirmModal } from '../components/deployments/BulkActionConfirmModal'
 import { CheckCircle2, XCircle, Clock, Loader2, RotateCcw, X, AlertTriangle, Server, Shield } from 'lucide-react'
+import { timeAgo } from '../utils/relativeTime'
 
 type Tab = 'pending' | 'scheduled' | 'history'
 
@@ -26,6 +28,9 @@ export function DeploymentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('pending')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkModal, setBulkModal] = useState<{ action: 'approve' | 'reject' } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -105,6 +110,28 @@ export function DeploymentsPage() {
     }
   }
 
+  const handleBulkConfirm = async (comment: string) => {
+    if (!bulkModal) return
+    setBulkLoading(true)
+    setBulkModal(null)
+    try {
+      const action = bulkModal.action === 'approve' ? bulkApproveDeployments : bulkRejectDeployments
+      const res = await action(Array.from(selectedIds), comment)
+      toast.success(res.message)
+      setSelectedIds(new Set())
+      load()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Bulk operation failed')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  // Clear selection when tab changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [activeTab])
+
   const tabs: { key: Tab; label: string; icon: typeof Clock; count: number }[] = [
     { key: 'pending', label: 'Pending', icon: Clock, count: deployments.filter((d) => d.status === 'PENDING').length },
     { key: 'scheduled', label: 'Scheduled', icon: CheckCircle2, count: deployments.filter((d) => d.status === 'APPROVED').length },
@@ -118,7 +145,8 @@ export function DeploymentsPage() {
       <TopBar title="Deployments" subtitle={`${deployments.length} total`} />
 
       <div className="space-y-6 p-8 animate-slide-up">
-        <div className="flex gap-1 rounded-lg border border-exia-border/40 bg-exia-card p-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex gap-1 rounded-lg border border-exia-border/40 bg-exia-card p-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.key
@@ -144,6 +172,26 @@ export function DeploymentsPage() {
               </button>
             )
           })}
+          </div>
+          {activeTab === 'pending' && selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-exia-text-secondary mr-2">{selectedIds.size} selected</span>
+              <button 
+                onClick={() => setBulkModal({ action: 'approve' })} 
+                disabled={bulkLoading}
+                className="btn-primary py-1.5 text-xs"
+              >
+                <CheckCircle2 size={14} className={bulkLoading ? 'animate-pulse' : ''} /> Approve Selected
+              </button>
+              <button 
+                onClick={() => setBulkModal({ action: 'reject' })}
+                disabled={bulkLoading}
+                className="btn-ghost py-1.5 text-xs border-exia-red/30 text-exia-red hover:bg-exia-red/10"
+              >
+                <XCircle size={14} className={bulkLoading ? 'animate-pulse' : ''} /> Reject Selected
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -174,6 +222,22 @@ export function DeploymentsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-exia-border/30 bg-exia-elevated/50">
+                  {activeTab === 'pending' && (
+                    <th className="px-4 py-3 text-left w-10">
+                      <input
+                        type="checkbox"
+                        checked={currentItems.length > 0 && selectedIds.size === currentItems.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(new Set(currentItems.map(i => i.id)))
+                          } else {
+                            setSelectedIds(new Set())
+                          }
+                        }}
+                        className="rounded border-exia-border/50 bg-exia-card text-exia-cyan focus:ring-exia-cyan/20"
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-exia-text-muted">Patch</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-exia-text-muted">Host</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-exia-text-muted">Status</th>
@@ -199,14 +263,33 @@ export function DeploymentsPage() {
                     <tr
                       key={dep.id}
                       onClick={() => navigate(`/deployments/${dep.id}`)}
-                      className="group border-b border-exia-border/20 transition-colors hover:bg-exia-elevated/30 cursor-pointer"
+                      className={`border-b border-exia-border/20 transition-colors last:border-0 hover:bg-exia-cyan/[0.02] cursor-pointer ${selectedIds.has(dep.id) ? 'bg-exia-cyan/[0.04]' : ''}`}
                     >
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-white">{dep.patch_name}</span>
+                      {activeTab === 'pending' && (
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(dep.id)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              const next = new Set(selectedIds)
+                              if (e.target.checked) next.add(dep.id)
+                              else next.delete(dep.id)
+                              setSelectedIds(next)
+                            }}
+                            className="rounded border-exia-border/50 bg-exia-card text-exia-cyan focus:ring-exia-cyan/20"
+                          />
+                        </td>
+                      )}
+                      <td
+                        className="px-4 py-3 cursor-pointer hover:underline"
+                        onClick={e => { e.stopPropagation(); navigate(`/patches/${dep.patch_id}`); }}
+                      >
+                        <span className="text-sm font-medium text-exia-text-primary">{dep.patch_name}</span>
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => navigate(`/hosts/${dep.host_id}`)}
+                          onClick={e => { e.stopPropagation(); navigate(`/hosts/${dep.host_id}`); }}
                           className="flex items-center gap-1.5 text-xs text-exia-cyan hover:underline"
                         >
                           <Server size={11} />
@@ -220,12 +303,12 @@ export function DeploymentsPage() {
                           {dep.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-exia-text-muted">
-                        {dep.scheduled_at ? new Date(dep.scheduled_at).toLocaleString() : '—'}
+                      <td className="px-4 py-3 text-xs text-exia-text-muted" title={dep.scheduled_at ? new Date(dep.scheduled_at).toLocaleString() : ''}>
+                        {dep.scheduled_at ? timeAgo(dep.scheduled_at) : '—'}
                       </td>
                       {activeTab === 'pending' && (
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => handleApprove(dep)}
                               disabled={isActionLoading}
@@ -246,7 +329,7 @@ export function DeploymentsPage() {
                         </td>
                       )}
                       {activeTab === 'scheduled' && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => handleCancel(dep)}
                             disabled={isActionLoading}
@@ -259,13 +342,13 @@ export function DeploymentsPage() {
                       )}
                       {activeTab === 'history' && (
                         <>
-                          <td className="px-4 py-3 text-xs text-exia-text-muted">
-                            {dep.started_at ? new Date(dep.started_at).toLocaleString() : '—'}
+                          <td className="px-4 py-3 text-xs text-exia-text-muted" title={dep.started_at ? new Date(dep.started_at).toLocaleString() : ''}>
+                            {dep.started_at ? timeAgo(dep.started_at) : '—'}
                           </td>
-                          <td className="px-4 py-3 text-xs text-exia-text-muted">
-                            {dep.finished_at ? new Date(dep.finished_at).toLocaleString() : '—'}
+                          <td className="px-4 py-3 text-xs text-exia-text-muted" title={dep.finished_at ? new Date(dep.finished_at).toLocaleString() : ''}>
+                            {dep.finished_at ? timeAgo(dep.finished_at) : '—'}
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                             {dep.status === 'FAILED' && (
                               <button
                                 onClick={() => handleRetry(dep)}
@@ -287,6 +370,13 @@ export function DeploymentsPage() {
           </div>
         )}
       </div>
+      <BulkActionConfirmModal
+        open={!!bulkModal}
+        action={bulkModal?.action ?? 'approve'}
+        count={selectedIds.size}
+        onConfirm={handleBulkConfirm}
+        onCancel={() => setBulkModal(null)}
+      />
     </>
   )
 }

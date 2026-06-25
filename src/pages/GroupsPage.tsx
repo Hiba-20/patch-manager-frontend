@@ -80,7 +80,7 @@ export function GroupsPage() {
             <Users size={14} />
           </div>
           <div>
-            <span className="font-semibold text-white">{row.original.name}</span>
+            <span className="font-semibold text-exia-text-primary">{row.original.name}</span>
             {row.original.description && (
               <p className="text-[11px] text-exia-text-muted mt-0.5">{row.original.description}</p>
             )}
@@ -163,7 +163,7 @@ export function GroupsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-white">Create Group</h2>
+              <h2 className="text-base font-bold text-exia-text-primary">Create Group</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-exia-text-muted hover:text-exia-text-secondary transition-colors">
                 <X size={16} />
               </button>
@@ -176,7 +176,7 @@ export function GroupsPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g. Production Web Servers"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                   autoFocus
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                 />
@@ -188,7 +188,7 @@ export function GroupsPage() {
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="e.g. Windows Server 2022 or Ubuntu 22.04 machines"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                 />
               </div>

@@ -4,6 +4,7 @@ import { getAuditLogs, type AuditLogResponse } from '../api/audit-logs'
 import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
+import { timeAgo } from '../utils/relativeTime'
 
 const ACTION_CONFIG: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   LOGIN:            { icon: LogIn,     color: 'text-exia-cyan',   bg: 'bg-exia-cyan/10' },
@@ -74,7 +75,7 @@ export function AuditLogPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-exia-text-primary">
                           {log.action.replace(/_/g, ' ')}
                         </span>
                         {log.status && (
@@ -94,6 +95,8 @@ export function AuditLogPage() {
                         </p>
                       )}
                       <div className="mt-1 flex items-center gap-3 text-[10px] text-exia-text-muted">
+                        <span>{timeAgo(log.timestamp)}</span>
+                        <span className="text-exia-text-muted/50">&middot;</span>
                         <span>{formatTimestamp(log.timestamp)}</span>
                         {log.ip_address && <span className="font-mono">{log.ip_address}</span>}
                       </div>

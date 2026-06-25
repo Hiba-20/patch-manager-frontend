@@ -111,7 +111,7 @@ export function CommandPalette() {
 
       <div
         className="relative w-full max-w-lg rounded-xl border border-exia-border/60 shadow-card-lg overflow-hidden animate-slide-up"
-        style={{ background: '#0b1120' }}
+        style={{ background: 'var(--card)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-exia-border/30 px-4 py-3">
@@ -123,7 +123,7 @@ export function CommandPalette() {
             onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0) }}
             onKeyDown={handleKeyDown}
             placeholder="Search pages and hosts…"
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-exia-text-muted focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:outline-none"
           />
           <kbd className="hidden sm:flex items-center gap-1 rounded-md border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[10px] font-medium text-exia-text-muted">
             <Command size={10} />
@@ -147,7 +147,7 @@ export function CommandPalette() {
                   className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                     idx === selectedIndex
                       ? 'bg-exia-cyan/[0.08] text-exia-cyan'
-                      : 'text-exia-text-secondary hover:bg-white/[0.03]'
+                      : 'text-exia-text-secondary hover:bg-elevated'
                   }`}
                 >
                   <div className={`flex h-7 w-7 items-center justify-center rounded-md border ${

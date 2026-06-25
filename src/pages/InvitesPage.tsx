@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { UserPlus, Trash2, Shield, Copy, Check } from 'lucide-react'
+import { UserPlus, Trash2, Shield, Copy, Check, Loader2 } from 'lucide-react'
 import { TopBar } from '../components/layout/TopBar'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
@@ -140,7 +140,7 @@ export function InvitesPage() {
             className="flex h-7 w-7 items-center justify-center rounded-lg text-exia-text-muted hover:text-exia-red hover:bg-exia-red/[0.08] transition-colors disabled:opacity-40"
           >
             {revoking === row.original.id ? (
-              <LoadingSpinner size="sm" />
+              <Loader2 size={13} className="animate-spin" />
             ) : (
               <Trash2 size={13} />
             )}
@@ -158,7 +158,7 @@ export function InvitesPage() {
         <div className="depth-card rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Invite Links</h2>
+              <h2 className="text-base font-bold text-exia-text-primary tracking-tight">Invite Links</h2>
               <p className="mt-1 text-xs text-exia-text-secondary">
                 Generate and manage invitation links for new administrators
               </p>
