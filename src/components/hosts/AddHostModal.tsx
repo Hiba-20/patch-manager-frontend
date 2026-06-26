@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Copy, Check, Loader2, Server, Monitor, Terminal, KeyRound, User, Lock } from 'lucide-react'
-import { createHost } from '../../api/hosts'
+import { createHost, getSshPublicKey } from '../../api/hosts'
 import type { HostCreateResponse } from '../../types/host'
 
 interface Props {
@@ -17,10 +17,18 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
   const [winrmPassword, setWinrmPassword] = useState('')
   const [sshUser, setSshUser] = useState('')
   const [sshPassword, setSshPassword] = useState('')
+  const [publicKey, setPublicKey] = useState('')
+  const [pubKeyCopied, setPubKeyCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<HostCreateResponse | null>(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (open && osType === 'linux') {
+      getSshPublicKey().then(r => setPublicKey(r.public_key)).catch(() => {})
+    }
+  }, [open, osType])
 
   if (!open) return null
 
@@ -213,18 +221,44 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
                     className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                   />
                 </div>
+                <div className="rounded-lg border border-exia-amber/20 bg-exia-amber/[0.06] px-4 py-3 text-xs text-exia-text-secondary leading-relaxed">
+                  Patch Manager uses key-based SSH authentication. Copy this public key into <code className="text-exia-cyan">~/.ssh/authorized_keys</code> on your Linux host.
+                </div>
                 <div>
                   <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
                     <Lock size={13} />
-                    SSH Password
+                    SSH Public Key
                   </label>
-                  <input
-                    type="password"
-                    value={sshPassword}
-                    onChange={(e) => setSshPassword(e.target.value)}
-                    placeholder="SSH password or key passphrase"
-                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
-                  />
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      readOnly
+                      value={publicKey}
+                      rows={3}
+                      className="flex-1 rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-xs font-mono text-exia-text-secondary resize-none focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                    />
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(publicKey)
+                        } catch {
+                          const ta = document.createElement('textarea')
+                          ta.value = publicKey
+                          document.body.appendChild(ta)
+                          ta.select()
+                          document.execCommand('copy')
+                          document.body.removeChild(ta)
+                        }
+                        setPubKeyCopied(true)
+                        setTimeout(() => setPubKeyCopied(false), 2000)
+                      }}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-exia-border/50 bg-exia-card text-exia-text-secondary hover:text-exia-cyan hover:border-exia-cyan/30 transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      {pubKeyCopied ? <Check size={14} className="text-exia-green" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  {pubKeyCopied && (
+                    <p className="mt-1 text-[10px] text-exia-green font-medium">Copied to clipboard!</p>
+                  )}
                 </div>
               </>
             )}
