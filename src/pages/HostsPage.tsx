@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useHosts } from '../hooks/useHosts'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { filterHosts, getUniqueOsTypes, getUniqueStatuses, type HostFilters, DEFAULT_HOST_FILTERS } from '../utils/filterHosts'
@@ -89,7 +89,7 @@ export function HostsPage() {
 
   const activeFilterCount = [filters.search, filters.osType, filters.status].filter(Boolean).length
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TableSkeleton rows={10} cols={5} />
   if (error) return <><TopBar title="Hosts" /><div className="p-8"><ErrorAlert message={error} /></div></>
 
   return (

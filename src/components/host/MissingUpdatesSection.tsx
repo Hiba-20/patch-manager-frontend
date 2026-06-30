@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { AlertTriangle, CloudLightning, Loader2, CheckCircle2, XCircle, RefreshCw, Rocket } from 'lucide-react'
+import { AlertTriangle, CloudLightning, Loader2, CheckCircle2, XCircle, RefreshCw, Rocket, Terminal } from 'lucide-react'
 import { getMissingUpdates, getDeepScanUpdates, deployPatch } from '../../api/updates'
 import type { MissingUpdate } from '../../types/update'
 import { DataTable } from '../shared/DataTable'
@@ -25,7 +25,7 @@ function formatCacheAge(cachedAt: string | null): string | null {
   return `${hrs}h ${min % 60}m ago`
 }
 
-export function MissingUpdatesSection({ hostId }: { hostId: string }) {
+export function MissingUpdatesSection({ hostId, osType }: { hostId: string; osType?: string }) {
   const [updates, setUpdates] = useState<MissingUpdate[]>([])
   const [loading, setLoading] = useState(true)
   const [deepScanning, setDeepScanning] = useState(false)
@@ -186,6 +186,34 @@ export function MissingUpdatesSection({ hostId }: { hostId: string }) {
     ],
     [kbStates],
   )
+
+  if (osType && osType !== 'windows') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center gap-3 relative z-10">
+          <div className="flex items-center gap-2">
+            <Terminal size={14} className="text-exia-text-muted" />
+            <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">Patch Scanning</h2>
+          </div>
+          <div className="flex-1 h-px bg-exia-border/20" />
+        </div>
+        <div className="rounded-xl border border-exia-border/30 bg-exia-card p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-exia-border/30 bg-exia-elevated">
+              <Terminal size={24} className="text-exia-text-muted" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Linux patch scanning coming soon</p>
+              <p className="mt-1 text-xs text-exia-text-muted max-w-md">
+                Patch scanning and deployment for Linux hosts is not yet available.
+                This feature will be added in a future release.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section>

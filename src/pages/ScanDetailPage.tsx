@@ -8,7 +8,7 @@ import { useLatestScan } from '../hooks/useLatestScan'
 import { useTriggerScan } from '../hooks/useTriggerScan'
 import { useStructuredScan } from '../hooks/useStructuredScan'
 import { StatusBadge } from '../components/shared/StatusBadge'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { TableSkeleton } from '../components/skeletons/TableSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import { InventorySummary } from '../components/scan/InventorySummary'
@@ -196,7 +196,7 @@ export function ScanDetailPage() {
 
   const noScanYet = !loading && !error && !scan && scanState === 'idle'
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TableSkeleton rows={8} cols={4} />
   if (error && scanState === 'idle') {
     const isNoScan = error.toLowerCase().includes('no scans found') || error.toLowerCase().includes('no scan')
     if (isNoScan) {

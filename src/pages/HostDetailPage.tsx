@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import {
   ArrowLeft, Scan, Server, Globe, Cpu, Calendar, Shield, Package,
   AlertTriangle, ChevronRight, HardDrive, Database, Loader2, CheckCircle2, XCircle,
@@ -9,7 +9,7 @@ import { useHostSoftware } from '../hooks/useHostSoftware'
 import { triggerScan } from '../api/scans'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { HostDetailSkeleton } from '../components/skeletons/HostDetailSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useToast } from '../components/shared/Toast'
@@ -66,7 +66,38 @@ export function HostDetailPage() {
   const { data: sw, loading: swLoading, error: swError } = useHostSoftware(hostId)
   const [scanning, setScanning] = useState(false)
   const [showScanConfirm, setShowScanConfirm] = useState(false)
+  const [activeSection, setActiveSection] = useState('overview')
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const toast = useToast()
+
+  const sections = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'updates', label: 'Updates' },
+    { id: 'software', label: 'Software' },
+    { id: 'patches', label: 'Patches' },
+  ]
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setActiveSection(e.target.id)
+          }
+        }
+      },
+      { rootMargin: '-100px 0px -60% 0px', threshold: 0 }
+    )
+    for (const s of sections) {
+      const el = document.getElementById(s.id)
+      if (el) observer.observe(el)
+    }
+    return () => observer.disconnect()
+  }, [host, sw])
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const handleLaunchScan = async () => {
     if (!hostId || scanning) return
@@ -158,13 +189,32 @@ export function HostDetailPage() {
     },
   ], [])
 
-  if (hostLoading || swLoading) return <LoadingSpinner />
+  if (hostLoading || swLoading) return <HostDetailSkeleton />
   if (hostError) return <><TopBar title="Host Details" breadcrumb="Hosts" /><div className="p-8"><ErrorAlert message={hostError} /></div></>
   if (!host) return <><TopBar title="Host Details" breadcrumb="Hosts" /><div className="p-8"><ErrorAlert message="Host not found" /></div></>
 
   return (
     <>
       <TopBar title={host.hostname} breadcrumb="Hosts" subtitle={host.status} />
+
+      <nav className="sticky top-0 z-30 flex items-center gap-1 border-b border-exia-border/30 bg-exia-navy/90 px-8 backdrop-blur-md">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => scrollToSection(s.id)}
+            className={`relative px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors ${
+              activeSection === s.id
+                ? 'text-exia-cyan'
+                : 'text-exia-text-muted hover:text-exia-text-secondary'
+            }`}
+          >
+            {s.label}
+            {activeSection === s.id && (
+              <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-exia-cyan shadow-[0_0_6px_rgba(34,211,238,0.4)]" />
+            )}
+          </button>
+        ))}
+      </nav>
 
       <div className="space-y-8 p-8 animate-slide-up">
         <Link
@@ -175,7 +225,7 @@ export function HostDetailPage() {
           Back to Hosts
         </Link>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div id="overview" className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="depth-card depth-card-hover rounded-xl p-5">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-exia-cyan/40 via-exia-cyan/10 to-transparent rounded-t-xl" />
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-exia-text-muted">Host Information</p>
@@ -269,11 +319,13 @@ export function HostDetailPage() {
           </div>
         </div>
 
-        {host.os_type === 'windows' && hostId && (
-          <MissingUpdatesSection hostId={hostId} />
-        )}
+        <div id="updates">
+          {hostId && (
+            <MissingUpdatesSection hostId={hostId} osType={host.os_type} />
+          )}
+        </div>
 
-        <section>
+        <section id="software">
           <SectionHeader title="Installed Software" count={sw?.software.length ?? 0} />
           {swError ? (
             <ErrorAlert message={swError} />
@@ -295,7 +347,7 @@ export function HostDetailPage() {
           )}
         </section>
 
-        <section>
+        <section id="patches">
           <SectionHeader title="Patch Deployments" count={sw?.patches.length ?? 0} />
           {swError ? (
             <ErrorAlert message={swError} />

@@ -4,7 +4,7 @@ import { ArrowLeft, Shield, Bug, Calendar, Server, Package } from 'lucide-react'
 import { getPatch, getDeployments, type PatchResponse, type DeploymentResponse } from '../api/patches'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { PatchDetailSkeleton } from '../components/skeletons/PatchDetailSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -73,7 +73,7 @@ export function PatchDetailPage() {
     [],
   )
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <PatchDetailSkeleton />
   if (error) return <><TopBar title="Patch Detail" /><div className="p-8"><ErrorAlert message={error} /></div></>
   if (!patch) return <><TopBar title="Patch Detail" /><div className="p-8"><ErrorAlert message="Patch not found" /></div></>
 

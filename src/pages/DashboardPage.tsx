@@ -6,7 +6,7 @@ import { StatsCard } from '../components/shared/StatsCard'
 import { ComplianceTrendChart } from '../components/dashboard/ComplianceTrendChart'
 import { SeverityBreakdownChart } from '../components/dashboard/SeverityBreakdownChart'
 import { MissingUpdatesCard } from '../components/dashboard/MissingUpdatesCard'
-import { LoadingSpinner } from '../components/shared/LoadingSpinner'
+import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
 
@@ -44,7 +44,7 @@ export function DashboardPage() {
   const { data, loading, error, lastUpdated } = useDashboardStats()
   const { history } = useTrendHistory(data)
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <DashboardSkeleton />
   if (error) return <><TopBar title="Dashboard" /><div className="p-8"><ErrorAlert message={error} /></div></>
 
   const onlinePie = [

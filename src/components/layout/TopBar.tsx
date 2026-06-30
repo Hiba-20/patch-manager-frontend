@@ -1,6 +1,7 @@
 import { Bell, ChevronRight, LogOut, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { useToast } from '../shared/Toast'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 interface TopBarProps {
@@ -11,6 +12,7 @@ interface TopBarProps {
 
 export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
   const { user, logout } = useAuth()
+  const toast = useToast()
   const [now, setNow] = useState(new Date())
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
@@ -77,7 +79,7 @@ export function TopBar({ title, subtitle, breadcrumb }: TopBarProps) {
         message="Are you sure you want to sign out?"
         confirmLabel="Sign out"
         variant="danger"
-        onConfirm={() => { logout(); setShowLogoutConfirm(false) }}
+        onConfirm={() => { toast.success('Signed out'); logout(); setShowLogoutConfirm(false) }}
         onCancel={() => setShowLogoutConfirm(false)}
       />
     </header>
