@@ -1,13 +1,20 @@
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Scan, Server, Globe, Cpu, Calendar, Shield, Package, AlertTriangle, ChevronRight } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import {
+  ArrowLeft, Scan, Server, Globe, Cpu, Calendar, Shield, Package,
+  AlertTriangle, ChevronRight, HardDrive, Database, Loader2, CheckCircle2, XCircle,
+} from 'lucide-react'
 import { useHost } from '../hooks/useHost'
 import { useHostSoftware } from '../hooks/useHostSoftware'
+import { triggerScan } from '../api/scans'
+import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
+import type { ColumnDef } from '@tanstack/react-table'
+import type { SoftwareItem, PatchOnHost } from '../types/host'
 
-/* ── Severity badge config ────────────────────────────────────── */
 const SEVERITY_CONFIG: Record<string, { bg: string; text: string; border: string }> = {
   Critical: { bg: 'bg-exia-red/10',   text: 'text-exia-red',   border: 'border-exia-red/25' },
   High:     { bg: 'bg-exia-amber/10', text: 'text-exia-amber', border: 'border-exia-amber/25' },
@@ -25,11 +32,10 @@ function SeverityBadge({ severity }: { severity: string }) {
   )
 }
 
-/* ── Info Row ─────────────────────────────────────────────────── */
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Server; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
-      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-exia-elevated border border-white/[0.05] text-exia-text-muted flex-shrink-0">
+    <div className="flex items-center gap-3 py-3 border-b border-exia-border/20 last:border-0">
+      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-exia-elevated border border-exia-border/40 text-exia-text-muted flex-shrink-0">
         <Icon size={13} />
       </div>
       <span className="flex-1 text-xs text-exia-text-secondary">{label}</span>
@@ -38,36 +44,128 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Server; label: str
   )
 }
 
-/* ── Section Header ───────────────────────────────────────────── */
 function SectionHeader({ title, count }: { title: string; count: number }) {
   return (
     <div className="mb-5 flex items-center gap-3">
       <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">{title}</h2>
-      <span className="rounded-full border border-white/[0.06] bg-exia-elevated px-2 py-0.5 text-[10px] font-semibold text-exia-text-muted">
+      <span className="rounded-full border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[10px] font-semibold text-exia-text-muted">
         {count}
       </span>
-      <div className="flex-1 h-px bg-white/[0.04]" />
+      <div className="flex-1 h-px bg-exia-border/20" />
     </div>
   )
 }
 
-/* ── Main Component ───────────────────────────────────────────── */
 export function HostDetailPage() {
   const { hostId } = useParams<{ hostId: string }>()
+  const navigate = useNavigate()
   const { data: host, loading: hostLoading, error: hostError } = useHost(hostId)
   const { data: sw, loading: swLoading, error: swError } = useHostSoftware(hostId)
+  const [scanning, setScanning] = useState(false)
+  const [scanStatus, setScanStatus] = useState<'idle' | 'success' | 'failed'>('idle')
+  const [scanError, setScanError] = useState<string | null>(null)
+
+  const handleLaunchScan = async () => {
+    if (!hostId || scanning) return
+    setScanning(true)
+    setScanStatus('idle')
+    setScanError(null)
+    try {
+      await triggerScan(hostId)
+      setScanStatus('success')
+    } catch (e: unknown) {
+      setScanStatus('failed')
+      setScanError((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? (e as Error)?.message ?? 'Scan failed')
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  const softwareColumns = useMemo<ColumnDef<SoftwareItem>[]>(() => [
+    { header: 'Name', accessorKey: 'name', cell: ({ getValue }) => <span className="font-medium text-white">{getValue() as string}</span> },
+    { header: 'Version', accessorKey: 'version', cell: ({ getValue }) => <span className="font-mono text-xs text-exia-cyan">{getValue() as string ?? '\u2014'}</span> },
+    { header: 'Vendor', accessorKey: 'vendor', cell: ({ getValue }) => <span className="text-exia-text-secondary">{getValue() as string ?? '\u2014'}</span> },
+    {
+      header: 'Package Manager',
+      accessorKey: 'package_manager',
+      cell: ({ getValue }) => {
+        const pm = getValue() as string | null
+        return pm ? (
+          <span className="rounded-md border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[11px] font-medium text-exia-text-secondary">
+            {pm}
+          </span>
+        ) : <span className="text-exia-text-muted">\u2014</span>
+      },
+    },
+    { header: 'Install Date', accessorKey: 'install_date', cell: ({ getValue }) => <span className="text-xs text-exia-text-muted">{getValue() as string ?? '\u2014'}</span> },
+  ], [])
+
+  const patchColumns = useMemo<ColumnDef<PatchOnHost>[]>(() => [
+    {
+      header: 'Patch',
+      accessorKey: 'patch_name',
+      cell: ({ getValue }) => (
+        <div className="flex items-center gap-2">
+          <Package size={13} className="text-exia-text-muted" />
+          <span className="font-medium text-white">{getValue() as string}</span>
+        </div>
+      ),
+    },
+    { header: 'Version', accessorKey: 'patch_version', cell: ({ getValue }) => <span className="font-mono text-xs text-exia-cyan">{getValue() as string}</span> },
+    {
+      header: 'Severity',
+      accessorKey: 'severity',
+      cell: ({ getValue }) => {
+        const s = getValue() as string | null
+        return s ? <SeverityBadge severity={s} /> : <span className="text-exia-text-muted">\u2014</span>
+      },
+    },
+    {
+      header: 'CVEs',
+      accessorKey: 'cve_references',
+      cell: ({ row }) => {
+        const cves = row.original.cve_references
+        if (!cves || cves.length === 0) return <span className="text-exia-text-muted">\u2014</span>
+        return (
+          <div className="flex flex-wrap gap-1">
+            {cves.slice(0, 2).map((cve) => (
+              <span key={cve} className="rounded-md border border-exia-border/40 bg-exia-elevated px-1.5 py-0.5 text-[10px] font-medium text-exia-text-secondary cursor-help" title={cve}>
+                {cve}
+              </span>
+            ))}
+            {cves.length > 2 && (
+              <span className="rounded-md border border-exia-border/40 bg-exia-elevated px-1.5 py-0.5 text-[10px] font-medium text-exia-text-secondary">
+                +{cves.length - 2}
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+    { header: 'Status', accessorKey: 'status', cell: ({ getValue }) => <StatusBadge status={getValue() as string} /> },
+    {
+      header: 'Scheduled',
+      accessorKey: 'scheduled_at',
+      cell: ({ getValue }) => {
+        const date = getValue() as string | null
+        return date ? (
+          <span className="text-xs text-exia-text-muted">
+            {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          </span>
+        ) : <span className="text-exia-text-muted">\u2014</span>
+      },
+    },
+  ], [])
 
   if (hostLoading || swLoading) return <LoadingSpinner />
   if (hostError) return <><TopBar title="Host Details" breadcrumb="Hosts" /><div className="p-8"><ErrorAlert message={hostError} /></div></>
-  if (!host)     return <><TopBar title="Host Details" breadcrumb="Hosts" /><div className="p-8"><ErrorAlert message="Host not found" /></div></>
+  if (!host) return <><TopBar title="Host Details" breadcrumb="Hosts" /><div className="p-8"><ErrorAlert message="Host not found" /></div></>
 
   return (
     <>
       <TopBar title={host.hostname} breadcrumb="Hosts" subtitle={host.status} />
 
       <div className="space-y-8 p-8 animate-slide-up">
-
-        {/* ── Back link ──────────────────────────────────────── */}
         <Link
           to="/hosts"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-exia-text-secondary transition-colors hover:text-exia-cyan"
@@ -76,28 +174,64 @@ export function HostDetailPage() {
           Back to Hosts
         </Link>
 
-        {/* ── Info + Actions row ─────────────────────────────── */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-
-          {/* Host Info card */}
-          <div className="relative rounded-xl border border-white/[0.05] bg-exia-card p-5 shadow-card lg:col-span-2">
+          <div className="depth-card depth-card-hover rounded-xl p-5">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-exia-cyan/40 via-exia-cyan/10 to-transparent rounded-t-xl" />
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-exia-text-muted">Host Information</p>
             <InfoRow icon={Server}   label="Hostname"   value={host.hostname} />
             <InfoRow icon={Globe}    label="IP Address"  value={<span className="font-mono text-exia-cyan">{host.ip_address}</span>} />
             <InfoRow icon={Cpu}      label="OS Type"     value={<span className="capitalize">{host.os_type}</span>} />
             <InfoRow icon={Shield}   label="Status"      value={<StatusBadge status={host.status} />} />
-            <InfoRow icon={Calendar} label="Registered"  value={new Date(host.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} />
+            <InfoRow icon={Calendar} label="Registered"  value={new Date(host.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} />
           </div>
 
-          {/* Quick Actions card */}
-          <div className="relative rounded-xl border border-white/[0.05] bg-exia-card p-5 shadow-card">
+          <div className="depth-card depth-card-hover rounded-xl p-5">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-exia-green/40 via-exia-green/10 to-transparent rounded-t-xl" />
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-exia-text-muted">System Resources</p>
+            {sw?.hardware ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-exia-text-secondary flex items-center gap-1.5"><Cpu size={12} />CPU ({sw.hardware.cpu_cores} Cores)</span>
+                    <span className="font-medium text-white">{sw.hardware.cpu_model || 'Unknown'}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-exia-text-secondary flex items-center gap-1.5"><Database size={12} />Memory</span>
+                    <span className="font-medium text-white">{sw.hardware.ram_used_percent}% used</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden">
+                    <div className="h-full bg-exia-cyan rounded-full transition-all duration-500" style={{ width: `${sw.hardware.ram_used_percent || 0}%` }} />
+                  </div>
+                  <div className="text-[10px] text-right mt-1 text-exia-text-muted">{sw.hardware.ram_total_gb} GB Total</div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-exia-text-secondary flex items-center gap-1.5"><HardDrive size={12} />Disk</span>
+                    <span className="font-medium text-white">{sw.hardware.disk_used_percent}% used</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden">
+                    <div className="h-full bg-exia-green rounded-full transition-all duration-500" style={{ width: `${sw.hardware.disk_used_percent || 0}%` }} />
+                  </div>
+                  <div className="text-[10px] text-right mt-1 text-exia-text-muted">{sw.hardware.disk_total_gb} GB Total</div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-exia-text-muted text-xs">
+                <HardDrive size={24} className="mb-2 opacity-50" />
+                No hardware data yet.
+              </div>
+            )}
+          </div>
+
+          <div className="depth-card depth-card-hover rounded-xl p-5">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-exia-amber/30 via-exia-amber/10 to-transparent rounded-t-xl" />
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-exia-text-muted">Quick Actions</p>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Link
                 to={`/hosts/${hostId}/scan`}
-                className="group flex w-full items-center justify-between rounded-lg border border-exia-cyan/20 bg-exia-cyan/[0.05] px-4 py-3 text-sm font-medium text-exia-cyan transition-all hover:border-exia-cyan/40 hover:bg-exia-cyan/10"
+                className="group flex w-full items-center justify-between rounded-lg border border-exia-border/50 bg-exia-card px-4 py-3 text-sm font-medium text-exia-text-secondary transition-all hover:border-exia-cyan/30 hover:text-exia-cyan"
               >
                 <div className="flex items-center gap-2.5">
                   <Scan size={15} />
@@ -105,96 +239,89 @@ export function HostDetailPage() {
                 </div>
                 <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
+
+              <button
+                onClick={handleLaunchScan}
+                disabled={scanning}
+                className="group flex w-full items-center justify-between rounded-lg border border-exia-cyan/20 bg-exia-cyan/[0.05] px-4 py-3 text-sm font-medium text-exia-cyan transition-all hover:border-exia-cyan/40 hover:bg-exia-cyan/10 disabled:opacity-60"
+              >
+                <div className="flex items-center gap-2.5">
+                  {scanning ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Scan size={15} />
+                  )}
+                  {scanning ? 'Scanning...' : 'Launch Inventory Scan'}
+                </div>
+                {!scanning && <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />}
+              </button>
+
+              {scanStatus === 'success' && (
+                <div className="flex items-center gap-2 rounded-lg border border-exia-green/20 bg-exia-green/[0.06] px-4 py-2.5 text-xs animate-fade-in">
+                  <CheckCircle2 size={14} className="text-exia-green flex-shrink-0" />
+                  <span className="text-exia-green font-medium">Scan launched successfully</span>
+                  <button
+                    onClick={() => navigate(`/hosts/${hostId}/scan`)}
+                    className="ml-auto text-exia-text-secondary hover:text-exia-cyan underline transition-colors"
+                  >
+                    View
+                  </button>
+                </div>
+              )}
+
+              {scanStatus === 'failed' && (
+                <div className="flex items-center gap-2 rounded-lg border border-exia-red/20 bg-exia-red/[0.06] px-4 py-2.5 text-xs animate-fade-in">
+                  <XCircle size={14} className="text-exia-red flex-shrink-0" />
+                  <span className="text-exia-red font-medium">{scanError || 'Scan failed'}</span>
+                </div>
+              )}
             </div>
           </div>
-
         </div>
 
-        {/* ── Software Table ─────────────────────────────────── */}
         <section>
           <SectionHeader title="Installed Software" count={sw?.software.length ?? 0} />
           {swError ? (
             <ErrorAlert message={swError} />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-white/[0.05] shadow-card">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.05] bg-exia-elevated">
-                    {['Name', 'Version', 'Vendor', 'Package Manager', 'Install Date'].map(h => (
-                      <th key={h} className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03] bg-exia-card">
-                  {(sw?.software ?? []).length === 0 ? (
-                    <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-exia-text-muted">No software data available.</td></tr>
-                  ) : (
-                    sw?.software.map((s) => (
-                      <tr key={s.id} className="table-row-hover transition-all duration-150">
-                        <td className="px-5 py-3.5 font-medium text-white">{s.name}</td>
-                        <td className="px-5 py-3.5 font-mono text-xs text-exia-cyan">{s.version ?? '—'}</td>
-                        <td className="px-5 py-3.5 text-exia-text-secondary">{s.vendor ?? '—'}</td>
-                        <td className="px-5 py-3.5">
-                          {s.package_manager ? (
-                            <span className="rounded-md border border-white/[0.06] bg-exia-elevated px-2 py-0.5 text-[11px] font-medium text-exia-text-secondary">
-                              {s.package_manager}
-                            </span>
-                          ) : '—'}
-                        </td>
-                        <td className="px-5 py-3.5 text-xs text-exia-text-muted">{s.install_date ?? '—'}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={sw?.software ?? []}
+              columns={softwareColumns}
+              enableSearch
+              searchPlaceholder="Search software…"
+              enableSorting
+              pageSize={10}
+              emptyState={
+                <div className="flex flex-col items-center gap-2 py-8 text-exia-text-muted">
+                  <Package size={20} className="opacity-50" />
+                  <p className="text-sm">No software data available. Run a scan to collect inventory.</p>
+                </div>
+              }
+            />
           )}
         </section>
 
-        {/* ── Patches Table ──────────────────────────────────── */}
         <section>
           <SectionHeader title="Patch Deployments" count={sw?.patches.length ?? 0} />
           {swError ? (
             <ErrorAlert message={swError} />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-white/[0.05] shadow-card">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.05] bg-exia-elevated">
-                    {['Patch', 'Version', 'Severity', 'Status', 'Scheduled'].map(h => (
-                      <th key={h} className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-exia-text-muted">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03] bg-exia-card">
-                  {(sw?.patches ?? []).length === 0 ? (
-                    <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-exia-text-muted">No patch deployments.</td></tr>
-                  ) : (
-                    sw?.patches.map((p) => (
-                      <tr key={p.patch_id} className="table-row-hover transition-all duration-150">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <Package size={13} className="text-exia-text-muted" />
-                            <span className="font-medium text-white">{p.patch_name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 font-mono text-xs text-exia-cyan">{p.patch_version}</td>
-                        <td className="px-5 py-3.5">
-                          {p.severity ? <SeverityBadge severity={p.severity} /> : <span className="text-exia-text-muted">—</span>}
-                        </td>
-                        <td className="px-5 py-3.5"><StatusBadge status={p.status} /></td>
-                        <td className="px-5 py-3.5 text-xs text-exia-text-muted">
-                          {p.scheduled_at ? new Date(p.scheduled_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={sw?.patches ?? []}
+              columns={patchColumns}
+              enableSearch
+              searchPlaceholder="Search patches…"
+              enableSorting
+              pageSize={10}
+              emptyState={
+                <div className="flex flex-col items-center gap-2 py-8 text-exia-text-muted">
+                  <Shield size={20} className="opacity-50" />
+                  <p className="text-sm">No patch deployments.</p>
+                </div>
+              }
+            />
           )}
         </section>
-
       </div>
     </>
   )

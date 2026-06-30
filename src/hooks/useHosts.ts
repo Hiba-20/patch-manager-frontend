@@ -18,7 +18,14 @@ export function useHosts(): UseHostsResult {
     setLoading(true)
     setError(null)
     getHosts()
-      .then((res) => { if (!cancelled) setData(res) })
+      .then((res) => {
+        if (cancelled) return
+        if (Array.isArray(res)) {
+          setData(res)
+        } else {
+          setError('Invalid response format')
+        }
+      })
       .catch((e) => { if (!cancelled) setError(e?.response?.data?.detail ?? e?.message ?? 'Unknown error') })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }

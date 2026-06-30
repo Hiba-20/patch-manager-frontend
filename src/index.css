@@ -1,22 +1,19 @@
-/* ─── Google Fonts ─────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Custom Properties ────────────────────────────────────── */
 :root {
   --color-bg:       #030712;
-  --color-surface:  #0d1117;
-  --color-border:   #1a2744;
+  --color-surface:  #0b1120;
+  --color-border:   #1e3050;
   --color-cyan:     #22d3ee;
   --color-green:    #10b981;
   --color-amber:    #f59e0b;
   --color-red:      #f43f5e;
 }
 
-/* ─── Base Reset ───────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -32,36 +29,27 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* ─── Custom Scrollbar ─────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: #0d1117;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e2d40;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #22d3ee40;
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0b1120; }
+::-webkit-scrollbar-thumb { background: #1e3050; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #22d3ee40; }
+
+::selection {
+  background: rgba(34, 211, 238, 0.2);
+  color: #e2e8f0;
 }
 
-/* ─── Utility: Glassmorphism ───────────────────────────────────── */
 @layer components {
   .glass-card {
-    background: rgba(13, 17, 23, 0.8);
+    background: rgba(11, 17, 32, 0.75);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
-
   .glass-card-elevated {
-    background: rgba(20, 30, 46, 0.6);
+    background: rgba(22, 34, 64, 0.6);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
   }
-
   .gradient-border {
     position: relative;
   }
@@ -71,22 +59,33 @@ body {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(34,211,238,0.3), transparent 60%);
+    background: linear-gradient(135deg, rgba(34,211,238,0.25), transparent 60%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
   }
+  .depth-card {
+    background: #0f1729;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .depth-card-hover {
+    transition: all 0.2s ease;
+  }
+  .depth-card-hover:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+  }
 }
 
-/* ─── Shimmer animation ────────────────────────────────────────── */
 .shimmer-bg {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.03) 25%,
-    rgba(255,255,255,0.07) 50%,
-    rgba(255,255,255,0.03) 75%
+    rgba(255,255,255,0.02) 25%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.02) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s infinite linear;
@@ -97,19 +96,16 @@ body {
   to   { background-position: -200% 0; }
 }
 
-/* ─── Terminal / Log Viewer ────────────────────────────────────── */
 .terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #1e2d40 #050a0e;
+  scrollbar-color: #1e3050 #050a0e;
 }
 
-/* ─── Table row hover glow ─────────────────────────────────────── */
 .table-row-hover:hover {
-  background: rgba(34, 211, 238, 0.025);
-  box-shadow: inset 3px 0 0 rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.03);
+  box-shadow: inset 3px 0 0 rgba(34, 211, 238, 0.35);
 }
 
-/* ─── Nav active indicator ─────────────────────────────────────── */
 .nav-active-glow {
-  box-shadow: inset 2px 0 0 #22d3ee, 0 0 12px rgba(34,211,238,0.1);
+  box-shadow: inset 2px 0 0 #22d3ee, 0 0 16px rgba(34,211,238,0.08);
 }
