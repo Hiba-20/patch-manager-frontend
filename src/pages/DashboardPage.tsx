@@ -289,9 +289,9 @@ export function DashboardPage() {
         <div className="rounded-lg border border-exia-cyan/15 bg-exia-cyan/[0.04] px-4 py-3 flex items-start gap-3">
           <Info size={14} className="text-exia-cyan mt-0.5 flex-shrink-0" />
           <p className="text-[11px] text-exia-text-secondary leading-relaxed">
-            Scaling to 200+ hosts? This KB-centric view lets you patch by update rather than by machine.
-            For enterprise caching, pair with <span className="font-semibold text-exia-cyan">WSUS</span> or
-            {' '}<span className="font-semibold text-exia-cyan">Microsoft Configuration Manager</span>.
+            Scaling to 200+ hosts? This view lets you patch by update rather than by machine.
+            For enterprise caching, pair with <span className="font-semibold text-exia-cyan">WSUS</span> (Windows),
+            {' '}<span className="font-semibold text-exia-cyan">apt-cacher-ng</span> or <span className="font-semibold text-exia-cyan">dnf reposync</span> (Linux).
           </p>
         </div>
 

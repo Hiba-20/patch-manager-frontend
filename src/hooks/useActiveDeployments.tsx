@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react'
 
-export type DeployStatus = 'pending' | 'deploying' | 'success' | 'failed' | 'rebooting'
+export type DeployStatus = 'pending' | 'deploying' | 'success' | 'failed' | 'rebooting' | 'scheduled'
 
 export interface DeploymentTask {
   id: string
@@ -68,10 +68,10 @@ export function ActiveDeploymentsProvider({ children }: { children: ReactNode })
   }, [])
 
   const clearCompleted = useCallback(() => {
-    setTasks((prev) => prev.filter((t) => t.status === 'pending' || t.status === 'deploying'))
+    setTasks((prev) => prev.filter((t) => t.status === 'pending' || t.status === 'deploying' || t.status === 'scheduled'))
   }, [])
 
-  const totalActive = useMemo(() => tasks.filter((t) => t.status === 'pending' || t.status === 'deploying').length, [tasks])
+  const totalActive = useMemo(() => tasks.filter((t) => t.status === 'pending' || t.status === 'deploying' || t.status === 'scheduled').length, [tasks])
 
   return (
     <ActiveDeploymentsContext.Provider value={{ groups, addTask, updateTask, removeTask, clearCompleted, totalActive }}>

@@ -44,6 +44,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
   const toast = useToast()
   const { addTask, updateTask } = useActiveDeployments()
 
+  const isLinux = osType && osType !== 'windows'
   const selectedUpdates = selectedIndices.map((i) => updates[i]).filter(Boolean)
 
   const fetchUpdates = useCallback(() => {
@@ -135,7 +136,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
   const columns = useMemo<ColumnDef<MissingUpdate>[]>(
     () => [
       {
-        header: 'KB',
+        header: isLinux ? 'Package' : 'KB',
         accessorKey: 'kb_id',
         cell: ({ getValue }) => (
           <span className="font-semibold text-white font-mono text-xs">
@@ -211,40 +212,12 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
     [kbStates],
   )
 
-  if (osType && osType !== 'windows') {
-    return (
-      <section>
-        <div className="mb-5 flex items-center gap-3 relative z-10">
-          <div className="flex items-center gap-2">
-            <Terminal size={14} className="text-exia-text-muted" />
-            <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">Patch Scanning</h2>
-          </div>
-          <div className="flex-1 h-px bg-exia-border/20" />
-        </div>
-        <div className="rounded-xl border border-exia-border/30 bg-exia-card p-8">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-exia-border/30 bg-exia-elevated">
-              <Terminal size={24} className="text-exia-text-muted" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Linux patch scanning coming soon</p>
-              <p className="mt-1 text-xs text-exia-text-muted max-w-md">
-                Patch scanning and deployment for Linux hosts is not yet available.
-                This feature will be added in a future release.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
   return (
     <section>
       <div className="mb-5 flex items-center gap-3 relative z-10">
         <div className="flex items-center gap-2">
-          <CloudLightning size={14} className="text-exia-amber" />
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">Missing Windows Updates</h2>
+          {isLinux ? <Terminal size={14} className="text-exia-amber" /> : <CloudLightning size={14} className="text-exia-amber" />}
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">Missing {isLinux ? 'Linux' : 'Windows'} Updates</h2>
         </div>
         <span className="rounded-full border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[10px] font-semibold text-exia-text-muted">
           {updates.length}
@@ -278,7 +251,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
           data={updates}
           columns={columns}
           enableSearch
-          searchPlaceholder="Search KBs..."
+          searchPlaceholder={isLinux ? 'Search packages...' : 'Search KBs...'}
           enableSorting
           enableSelection
           onSelectionChange={setSelectedIndices}
