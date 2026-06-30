@@ -37,3 +37,8 @@ export async function updateHost(hostId: string, data: { hostname?: string; ip_a
 export async function deleteHost(hostId: string): Promise<void> {
   await apiClient.delete(`/hosts/${hostId}`)
 }
+
+export async function getSshPublicKey(): Promise<{ public_key: string }> {
+  const { data } = await apiClient.get<{ public_key: string }>('/hosts/ssh-public-key')
+  return data
+}

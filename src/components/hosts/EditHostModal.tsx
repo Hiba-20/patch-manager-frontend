@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { X, Loader2, Monitor, Terminal, Server, User, Lock } from 'lucide-react'
-import { updateHost } from '../../api/hosts'
+import { useState, useEffect } from 'react'
+import { X, Copy, Check, Loader2, Monitor, Terminal, Server, User, Lock } from 'lucide-react'
+import { updateHost, getSshPublicKey } from '../../api/hosts'
 import type { HostResponse } from '../../types/host'
 
 interface Props {
@@ -18,8 +18,16 @@ export function EditHostModal({ host, open, onClose, onUpdated }: Props) {
   const [winrmPassword, setWinrmPassword] = useState('')
   const [sshUser, setSshUser] = useState(host?.ssh_user ?? '')
   const [sshPassword, setSshPassword] = useState('')
+  const [publicKey, setPublicKey] = useState('')
+  const [pubKeyCopied, setPubKeyCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open && host?.os_type === 'linux') {
+      getSshPublicKey().then(r => setPublicKey(r.public_key)).catch(() => {})
+    }
+  }, [open, host?.os_type])
 
   if (!open || !host) return null
 
@@ -166,38 +174,64 @@ export function EditHostModal({ host, open, onClose, onUpdated }: Props) {
                 />
               </div>
             </>
-          ) : (
-            <>
-              <div className="h-px bg-exia-border/20" />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-exia-text-muted">SSH Credentials</p>
-              <div>
-                <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
-                  <User size={13} />
-                  SSH Username
-                </label>
-                <input
-                  type="text"
-                  value={sshUser}
-                  onChange={(e) => setSshUser(e.target.value)}
-                  placeholder="e.g. root"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
-                  <Lock size={13} />
-                  SSH Password
-                </label>
-                <input
-                  type="password"
-                  value={sshPassword}
-                  onChange={(e) => setSshPassword(e.target.value)}
-                  placeholder="Leave empty to keep current"
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
-                />
-              </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="h-px bg-exia-border/20" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-exia-text-muted">SSH Credentials</p>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <User size={13} />
+                    SSH Username
+                  </label>
+                  <input
+                    type="text"
+                    value={sshUser}
+                    onChange={(e) => setSshUser(e.target.value)}
+                    placeholder="e.g. root"
+                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  />
+                </div>
+                <div className="rounded-lg border border-exia-amber/20 bg-exia-amber/[0.06] px-4 py-3 text-xs text-exia-text-secondary leading-relaxed">
+                  Patch Manager uses key-based SSH authentication. Copy this public key into <code className="text-exia-cyan">~/.ssh/authorized_keys</code> on your Linux host.
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <Lock size={13} />
+                    SSH Public Key
+                  </label>
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      readOnly
+                      value={publicKey}
+                      rows={3}
+                      className="flex-1 rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-xs font-mono text-exia-text-secondary resize-none focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                    />
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(publicKey)
+                        } catch {
+                          const ta = document.createElement('textarea')
+                          ta.value = publicKey
+                          document.body.appendChild(ta)
+                          ta.select()
+                          document.execCommand('copy')
+                          document.body.removeChild(ta)
+                        }
+                        setPubKeyCopied(true)
+                        setTimeout(() => setPubKeyCopied(false), 2000)
+                      }}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-exia-border/50 bg-exia-card text-exia-text-secondary hover:text-exia-cyan hover:border-exia-cyan/30 transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      {pubKeyCopied ? <Check size={14} className="text-exia-green" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  {pubKeyCopied && (
+                    <p className="mt-1 text-[10px] text-exia-green font-medium">Copied to clipboard!</p>
+                  )}
+                </div>
+              </>
+            )}
 
           <div className="flex gap-2">
             <button
