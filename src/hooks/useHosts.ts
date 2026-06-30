@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getHosts } from '../api/hosts'
 import type { HostResponse } from '../types/host'
 
@@ -6,6 +6,7 @@ interface UseHostsResult {
   data: HostResponse[]
   loading: boolean
   error: string | null
+  refetch: () => void
 }
 
 export function useHosts(): UseHostsResult {
@@ -13,7 +14,7 @@ export function useHosts(): UseHostsResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetch = useCallback(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -31,5 +32,7 @@ export function useHosts(): UseHostsResult {
     return () => { cancelled = true }
   }, [])
 
-  return { data, loading, error }
+  useEffect(() => { fetch() }, [fetch])
+
+  return { data, loading, error, refetch: fetch }
 }

@@ -7,6 +7,10 @@ export interface HostResponse {
   created_at: string
 }
 
+export interface HostCreateResponse extends HostResponse {
+  api_key: string
+}
+
 export interface HardwareInfo {
   cpu_model: string | null
   cpu_cores: number | null

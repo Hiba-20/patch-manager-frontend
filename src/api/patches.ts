@@ -76,3 +76,18 @@ export async function approveDeployment(deploymentId: string): Promise<Deploymen
   const { data } = await apiClient.patch<DeploymentResponse>(`/patches/deployments/${deploymentId}/approve`)
   return data
 }
+
+export async function rejectDeployment(deploymentId: string): Promise<DeploymentResponse> {
+  const { data } = await apiClient.patch<DeploymentResponse>(`/patches/deployments/${deploymentId}/reject`)
+  return data
+}
+
+export async function cancelDeployment(deploymentId: string): Promise<DeploymentResponse> {
+  const { data } = await apiClient.post<DeploymentResponse>(`/patches/deployments/${deploymentId}/cancel`)
+  return data
+}
+
+export async function retryDeployment(deploymentId: string): Promise<DeploymentResponse> {
+  const { data } = await apiClient.post<DeploymentResponse>(`/patches/deployments/${deploymentId}/retry`)
+  return data
+}

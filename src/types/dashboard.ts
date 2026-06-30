@@ -8,4 +8,5 @@ export interface DashboardStats {
   high_count: number
   medium_count: number
   low_count: number
+  hosts_without_data: number
 }

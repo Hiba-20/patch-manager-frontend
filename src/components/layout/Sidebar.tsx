@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { History, LayoutDashboard, Server, Shield, ShieldCheck, UserPlus, Zap } from 'lucide-react'
+import { ClipboardCheck, History, LayoutDashboard, Server, Shield, ShieldCheck, UserPlus, Users, Zap } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { to: '/',         label: 'Dashboard',  icon: LayoutDashboard },
-  { to: '/hosts',    label: 'Hosts',      icon: Server },
-  { to: '/patches',  label: 'Patches',    icon: Shield },
-  { to: '/audit-log', label: 'Audit Log',  icon: History },
+  { to: '/',         label: 'Dashboard',     icon: LayoutDashboard },
+  { to: '/hosts',    label: 'Hosts',         icon: Server },
+  { to: '/groups',   label: 'Groups',        icon: Users },
+  { to: '/deployments', label: 'Deployments', icon: ClipboardCheck },
+  { to: '/patches',  label: 'Patches',       icon: Shield },
+  { to: '/audit-log', label: 'Audit Log',     icon: History },
 ]
 
 const SETTINGS_ITEMS = [
