@@ -48,7 +48,7 @@ export function ActiveDeploymentsPanel() {
         ) : (
           <CheckCircle2 size={14} className="text-exia-green" />
         )}
-        <span className="text-xs font-semibold text-white">{totalTasks} deployment{totalTasks !== 1 ? 's' : ''}</span>
+        <span className="text-xs font-semibold text-exia-text-primary">{totalTasks} deployment{totalTasks !== 1 ? 's' : ''}</span>
         <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-exia-cyan/10 px-1.5 text-[10px] font-bold text-exia-cyan">
           {totalActive || completedTasks}
         </span>
@@ -69,7 +69,7 @@ export function ActiveDeploymentsPanel() {
           ) : (
             <CheckCircle2 size={14} className="text-exia-green" />
           )}
-          <span className="text-xs font-semibold text-white">Active Deployments</span>
+          <span className="text-xs font-semibold text-exia-text-primary">Active Deployments</span>
           <span className="rounded-full bg-exia-cyan/10 px-1.5 py-0.5 text-[10px] font-bold text-exia-cyan">
             {totalTasks}
           </span>
@@ -78,7 +78,7 @@ export function ActiveDeploymentsPanel() {
           {!hasActive && completedTasks > 0 && (
             <button
               onClick={clearCompleted}
-              className="flex h-6 w-6 items-center justify-center rounded text-exia-text-muted hover:text-exia-text-secondary hover:bg-white/[0.05] transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded text-exia-text-muted hover:text-exia-text-secondary hover:bg-elevated transition-colors"
               title="Clear completed"
             >
               <X size={12} />
@@ -86,7 +86,7 @@ export function ActiveDeploymentsPanel() {
           )}
           <button
             onClick={() => setMinimized(true)}
-            className="flex h-6 w-6 items-center justify-center rounded text-exia-text-muted hover:text-exia-text-secondary hover:bg-white/[0.05] transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded text-exia-text-muted hover:text-exia-text-secondary hover:bg-elevated transition-colors"
           >
             <ChevronDown size={14} />
           </button>
@@ -115,7 +115,7 @@ export function ActiveDeploymentsPanel() {
           <div key={group.kbId} className="rounded-lg border border-exia-border/30 bg-exia-elevated p-3">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={11} className="text-exia-amber flex-shrink-0" />
-              <span className="font-mono text-[11px] font-semibold text-white">{group.kbId}</span>
+              <span className="font-mono text-[11px] font-semibold text-exia-text-primary">{group.kbId}</span>
               <span className="text-[10px] text-exia-text-secondary truncate flex-1">{group.title}</span>
             </div>
             <div className="space-y-1.5">

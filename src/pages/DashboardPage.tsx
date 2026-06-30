@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp, Info, ClipboardCheck } from 'lucide-react'
+import { Server, Wifi, WifiOff, AlertTriangle, RefreshCw, Activity, TrendingUp, Info, ClipboardCheck, CheckCircle2 } from 'lucide-react'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { useTrendHistory } from '../hooks/useTrendHistory'
 import { getDeployments } from '../api/patches'
@@ -27,7 +27,7 @@ function DonutTooltip({ active, payload }: DonutTooltipProps) {
   const { name, value } = payload[0]
   return (
     <div className="rounded-xl border border-exia-border/60 bg-exia-elevated/90 backdrop-blur-md px-4 py-3 shadow-card-md text-sm">
-      <p className="font-medium text-white">{name}</p>
+      <p className="font-medium text-exia-text-primary">{name}</p>
       <p className="text-xs text-exia-text-secondary mt-0.5">{value}</p>
     </div>
   )
@@ -117,6 +117,45 @@ export function DashboardPage() {
           />
         </div>
 
+        {/* New KPI Row */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <StatsCard
+            title="Success Rate"
+            value={`${data?.deployment_success_rate ?? 100}%`}
+            icon={<CheckCircle2 size={18} />}
+            accent="green"
+            sublabel="Deployments (30d)"
+          />
+          <StatsCard
+            title="Patch Velocity"
+            value={data?.patch_velocity_current ?? 0}
+            icon={<TrendingUp size={18} />}
+            accent="cyan"
+            sublabel="Patches (7d)"
+          />
+          <StatsCard
+            title="Pending Approvals"
+            value={data?.pending_approvals ?? 0}
+            icon={<ClipboardCheck size={18} />}
+            accent="amber"
+            sublabel="Awaiting action"
+          />
+          <StatsCard
+            title="Avg Days Since Scan"
+            value={data?.avg_days_since_scan ?? 0}
+            icon={<Activity size={18} />}
+            accent={((data?.avg_days_since_scan ?? 0) > 7) ? "red" : "cyan"}
+            sublabel="Fleet freshness"
+          />
+          <StatsCard
+            title="Never Scanned"
+            value={data?.hosts_never_scanned ?? 0}
+            icon={<Info size={18} />}
+            accent={((data?.hosts_never_scanned ?? 0) > 0) ? "amber" : "green"}
+            sublabel="Blind spots"
+          />
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity size={14} className="text-exia-cyan" />
@@ -152,7 +191,7 @@ export function DashboardPage() {
                   Latest: <span className="font-semibold text-exia-cyan">{compRate.toFixed(1)}%</span>
                 </span>
                 <span className="text-exia-text-muted">
-                  Range: <span className="font-semibold text-white">
+                  Range: <span className="font-semibold text-exia-text-primary">
                     {Math.min(...history.points.map(p => p.compliance_rate)).toFixed(0)}%
                     {' \u2014 '}
                     {Math.max(...history.points.map(p => p.compliance_rate)).toFixed(0)}%
@@ -311,9 +350,9 @@ export function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={deployActivity}>
-                  <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={{ stroke: '#1e3050' }} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} width={20} />
-                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(34,211,238,0.2)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#94a3b8' }} />
+                  <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} width={20} />
+                  <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: 'var(--text-muted)' }} />
                   <Bar dataKey="count" fill="#22d3ee" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

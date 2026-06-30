@@ -45,7 +45,7 @@ export function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-exia-cyan/10 border border-exia-cyan/20 mb-4">
               <Shield size={22} className="text-exia-cyan" />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">Exia Patch Manager</h1>
+            <h1 className="text-lg font-bold text-exia-text-primary tracking-tight">Exia Patch Manager</h1>
             <p className="mt-1 text-xs text-exia-text-secondary">Sign in to your account</p>
           </div>
 
@@ -68,7 +68,7 @@ export function LoginPage() {
                 placeholder="admin@exia.tech"
                 required
                 autoFocus
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               />
             </div>
 
@@ -83,7 +83,7 @@ export function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
                   required
-                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-3.5 pr-10 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  className="w-full rounded-lg border border-exia-border/50 bg-exia-card pl-3.5 pr-10 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
                 />
                 <button
                   type="button"

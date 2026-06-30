@@ -2,11 +2,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useMemo, useState, useRef, useEffect } from 'react'
 import {
   ArrowLeft, Scan, Server, Globe, Cpu, Calendar, Shield, Package,
-  AlertTriangle, ChevronRight, HardDrive, Database, Loader2, CheckCircle2, XCircle,
+  AlertTriangle, ChevronRight, HardDrive, Database, Loader2, CheckCircle2, XCircle, Clock, User, Lock,
 } from 'lucide-react'
 import { useHost } from '../hooks/useHost'
 import { useHostSoftware } from '../hooks/useHostSoftware'
-import { triggerScan } from '../api/scans'
+import { triggerScan, getHostScanHistory } from '../api/scans'
+import type { ScanHistoryItem } from '../api/scans'
+import { timeAgo } from '../utils/relativeTime'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { HostDetailSkeleton } from '../components/skeletons/HostDetailSkeleton'
@@ -42,7 +44,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: typeof Server; label: str
         <Icon size={13} />
       </div>
       <span className="flex-1 text-xs text-exia-text-secondary">{label}</span>
-      <div className="text-sm font-medium text-white">{value}</div>
+      <div className="text-sm font-medium text-exia-text-primary">{value}</div>
     </div>
   )
 }
@@ -68,6 +70,8 @@ export function HostDetailPage() {
   const [showScanConfirm, setShowScanConfirm] = useState(false)
   const [activeSection, setActiveSection] = useState('overview')
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
+  const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([])
+  const [scanHistoryLoading, setScanHistoryLoading] = useState(false)
   const toast = useToast()
 
   const sections = [
@@ -75,7 +79,17 @@ export function HostDetailPage() {
     { id: 'updates', label: 'Updates' },
     { id: 'software', label: 'Software' },
     { id: 'patches', label: 'Patches' },
+    { id: 'scan-history', label: 'Scan History' },
   ]
+
+  useEffect(() => {
+    if (!hostId) return
+    setScanHistoryLoading(true)
+    getHostScanHistory(hostId)
+      .then(setScanHistory)
+      .catch(() => {})
+      .finally(() => setScanHistoryLoading(false))
+  }, [hostId])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -114,7 +128,7 @@ export function HostDetailPage() {
   }
 
   const softwareColumns = useMemo<ColumnDef<SoftwareItem>[]>(() => [
-    { header: 'Name', accessorKey: 'name', cell: ({ getValue }) => <span className="font-medium text-white">{getValue() as string}</span> },
+    { header: 'Name', accessorKey: 'name', cell: ({ getValue }) => <span className="font-medium text-exia-text-primary">{getValue() as string}</span> },
     { header: 'Version', accessorKey: 'version', cell: ({ getValue }) => <span className="font-mono text-xs text-exia-cyan">{getValue() as string ?? '\u2014'}</span> },
     { header: 'Vendor', accessorKey: 'vendor', cell: ({ getValue }) => <span className="text-exia-text-secondary">{getValue() as string ?? '\u2014'}</span> },
     {
@@ -139,7 +153,7 @@ export function HostDetailPage() {
       cell: ({ getValue }) => (
         <div className="flex items-center gap-2">
           <Package size={13} className="text-exia-text-muted" />
-          <span className="font-medium text-white">{getValue() as string}</span>
+          <span className="font-medium text-exia-text-primary">{getValue() as string}</span>
         </div>
       ),
     },
@@ -234,6 +248,10 @@ export function HostDetailPage() {
             <InfoRow icon={Cpu}      label="OS Type"     value={<span className="capitalize">{host.os_type}</span>} />
             <InfoRow icon={Shield}   label="Status"      value={<StatusBadge status={host.status} />} />
             <InfoRow icon={Calendar} label="Registered"  value={new Date(host.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} />
+            {host.os_type === 'windows' && host.winrm_user && <InfoRow icon={User} label="WinRM User" value={<span className="font-mono text-exia-cyan">{host.winrm_user}</span>} />}
+            {host.os_type === 'windows' && host.winrm_password && <InfoRow icon={Lock} label="WinRM Auth" value={<span className="text-exia-amber text-xs">Configured</span>} />}
+            {host.os_type === 'linux' && host.ssh_user && <InfoRow icon={User} label="SSH User" value={<span className="font-mono text-exia-cyan">{host.ssh_user}</span>} />}
+            {host.os_type === 'linux' && host.ssh_password && <InfoRow icon={Lock} label="SSH Auth" value={<span className="text-exia-amber text-xs">Configured</span>} />}
           </div>
 
           <div className="depth-card depth-card-hover rounded-xl p-5">
@@ -244,13 +262,13 @@ export function HostDetailPage() {
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className="text-exia-text-secondary flex items-center gap-1.5"><Cpu size={12} />CPU ({sw.hardware.cpu_cores} Cores)</span>
-                    <span className="font-medium text-white">{sw.hardware.cpu_model || 'Unknown'}</span>
+                    <span className="font-medium text-exia-text-primary">{sw.hardware.cpu_model || 'Unknown'}</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className="text-exia-text-secondary flex items-center gap-1.5"><Database size={12} />Memory</span>
-                    <span className="font-medium text-white">{sw.hardware.ram_used_percent}% used</span>
+                    <span className="font-medium text-exia-text-primary">{sw.hardware.ram_used_percent}% used</span>
                   </div>
                   <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden">
                     <div className="h-full bg-exia-cyan rounded-full transition-all duration-500" style={{ width: `${sw.hardware.ram_used_percent || 0}%` }} />
@@ -260,7 +278,7 @@ export function HostDetailPage() {
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
                     <span className="text-exia-text-secondary flex items-center gap-1.5"><HardDrive size={12} />Disk</span>
-                    <span className="font-medium text-white">{sw.hardware.disk_used_percent}% used</span>
+                    <span className="font-medium text-exia-text-primary">{sw.hardware.disk_used_percent}% used</span>
                   </div>
                   <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden">
                     <div className="h-full bg-exia-green rounded-full transition-all duration-500" style={{ width: `${sw.hardware.disk_used_percent || 0}%` }} />
@@ -366,6 +384,57 @@ export function HostDetailPage() {
                 </div>
               }
             />
+          )}
+        </section>
+
+        <section id="scan-history">
+          <SectionHeader title="Scan History" count={scanHistory.length} />
+          {scanHistoryLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={20} className="animate-spin text-exia-cyan" />
+            </div>
+          ) : scanHistory.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-8 text-exia-text-muted">
+              <Clock size={20} className="opacity-50" />
+              <p className="text-sm">No scan history available.</p>
+            </div>
+          ) : (
+            <div className="depth-card rounded-xl p-6">
+              <div className="space-y-0">
+                {scanHistory.map((item, i) => {
+                  const Icon = item.status === 'completed' ? CheckCircle2 : item.status === 'failed' ? XCircle : Clock
+                  const isLast = i === scanHistory.length - 1
+                  return (
+                    <div key={item.id} className="flex items-start gap-3 pb-3 relative">
+                      <div className="flex flex-col items-center">
+                        <div className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                          item.status === 'completed' ? 'border-exia-green/30 bg-exia-green/10 text-exia-green'
+                          : item.status === 'failed' ? 'border-exia-red/30 bg-exia-red/10 text-exia-red'
+                          : 'border-exia-border/40 bg-exia-elevated text-exia-text-muted'
+                        }`}>
+                          <Icon size={12} />
+                        </div>
+                        {!isLast && <div className="w-px flex-1 bg-exia-border/20 mt-1" />}
+                      </div>
+                      <div className="flex-1 min-w-0 pb-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-exia-text-secondary capitalize">{item.status}</p>
+                          <span className="text-[10px] text-exia-text-muted font-mono">
+                            {timeAgo(item.started_at)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-[10px] text-exia-text-muted">
+                          <span>{item.patch_count} patches found</span>
+                          {item.duration_seconds > 0 && (
+                            <span>{item.duration_seconds}s duration</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
         </section>
       </div>

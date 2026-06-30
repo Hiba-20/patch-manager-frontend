@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, Shield, Bug, Calendar, Server, Package } from 'lucide-react'
-import { getPatch, getDeployments, type PatchResponse, type DeploymentResponse } from '../api/patches'
+import { getPatch, getDeployments, getPatchAffectedHosts, type PatchResponse, type DeploymentResponse, type AffectedHostsResponse } from '../api/patches'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { PatchDetailSkeleton } from '../components/skeletons/PatchDetailSkeleton'
@@ -13,7 +13,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-exia-border/20 last:border-0">
       <span className="text-xs text-exia-text-secondary">{label}</span>
-      <div className="text-sm font-medium text-white text-right">{value}</div>
+      <div className="text-sm font-medium text-exia-text-primary text-right">{value}</div>
     </div>
   )
 }
@@ -22,16 +22,18 @@ export function PatchDetailPage() {
   const { patchId } = useParams<{ patchId: string }>()
   const [patch, setPatch] = useState<PatchResponse | null>(null)
   const [deployments, setDeployments] = useState<DeploymentResponse[]>([])
+  const [affected, setAffected] = useState<AffectedHostsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!patchId) return
     setLoading(true)
-    Promise.all([getPatch(patchId), getDeployments()])
-      .then(([p, d]) => {
+    Promise.all([getPatch(patchId), getDeployments(), getPatchAffectedHosts(patchId).catch(() => null)])
+      .then(([p, d, a]) => {
         setPatch(p)
         setDeployments(d.filter((dep) => dep.patch_id === patchId))
+        setAffected(a)
       })
       .catch((e) => setError(e?.response?.data?.detail ?? e?.message ?? 'Failed to load patch'))
       .finally(() => setLoading(false))
@@ -39,7 +41,7 @@ export function PatchDetailPage() {
 
   const depColumns = useMemo<ColumnDef<DeploymentResponse>[]>(
     () => [
-      { header: 'Host', accessorKey: 'hostname', cell: ({ getValue }) => <span className="font-medium text-white">{getValue() as string}</span> },
+      { header: 'Host', accessorKey: 'hostname', cell: ({ getValue }) => <span className="font-medium text-exia-text-primary">{getValue() as string}</span> },
       {
         header: 'Status',
         accessorKey: 'status',
@@ -73,6 +75,15 @@ export function PatchDetailPage() {
     [],
   )
 
+  const affectedColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      { header: 'Host', accessorKey: 'hostname', cell: ({ getValue }) => <span className="font-medium text-exia-text-primary">{getValue() as string}</span> },
+      { header: 'IP', accessorKey: 'ip_address', cell: ({ getValue }) => <span className="font-mono text-xs text-secondary">{getValue() as string}</span> },
+      { header: 'OS', accessorKey: 'os_type', cell: ({ getValue }) => <span className="capitalize">{getValue() as string}</span> },
+    ],
+    []
+  )
+
   if (loading) return <PatchDetailSkeleton />
   if (error) return <><TopBar title="Patch Detail" /><div className="p-8"><ErrorAlert message={error} /></div></>
   if (!patch) return <><TopBar title="Patch Detail" /><div className="p-8"><ErrorAlert message="Patch not found" /></div></>
@@ -94,7 +105,7 @@ export function PatchDetailPage() {
           <div className="depth-card depth-card-hover rounded-xl p-5 lg:col-span-2">
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-exia-cyan/40 via-exia-cyan/10 to-transparent rounded-t-xl" />
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-exia-text-muted">Patch Information</p>
-            <InfoRow label="Name" value={<span className="text-white">{patch.name}</span>} />
+            <InfoRow label="Name" value={<span className="text-exia-text-primary">{patch.name}</span>} />
             <InfoRow label="Version" value={<span className="font-mono text-exia-cyan">{patch.version}</span>} />
             <InfoRow label="Vendor" value={<span>{patch.vendor || '\u2014'}</span>} />
             <InfoRow label="OS Type" value={<span className="capitalize">{patch.os_type.replace('_', ' ').toLowerCase()}</span>} />
@@ -147,6 +158,28 @@ export function PatchDetailPage() {
             }
           />
         </section>
+
+        {affected && (
+          <section>
+            <div className="mb-5 flex items-center gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-exia-text-secondary">Affected Hosts</h2>
+              <span className="rounded-full border border-exia-border/40 bg-exia-elevated px-2 py-0.5 text-[10px] font-semibold text-exia-text-muted">{affected.total_affected}</span>
+              <div className="flex-1 h-px bg-exia-border/20" />
+            </div>
+            <DataTable
+              data={affected.hosts}
+              columns={affectedColumns}
+              enableSorting
+              pageSize={10}
+              emptyState={
+                <div className="flex flex-col items-center gap-2 py-8 text-exia-text-muted">
+                  <Shield size={20} className="opacity-50" />
+                  <p className="text-sm">No affected hosts found.</p>
+                </div>
+              }
+            />
+          </section>
+        )}
       </div>
     </>
   )

@@ -170,7 +170,7 @@ export function AggregatedUpdatesTable() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-semibold text-white">{u.kb_id}</span>
+                      <span className="font-mono text-xs font-semibold text-exia-text-primary">{u.kb_id}</span>
                       <span className={`inline-block rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${colorClass}`}>
                         {u.severity}
                       </span>
@@ -223,7 +223,7 @@ export function AggregatedUpdatesTable() {
       {deployTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setDeployTarget(null); setScheduleTime('') }}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-bold text-white mb-2">Deploy {deployTarget.kb_id}</h2>
+            <h2 className="text-base font-bold text-exia-text-primary mb-2">Deploy {deployTarget.kb_id}</h2>
             <p className="text-sm text-exia-text-secondary mb-4">
               Install on {deployTarget.affected_hosts.length} host(s):
             </p>
@@ -241,7 +241,7 @@ export function AggregatedUpdatesTable() {
                 type="datetime-local"
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
               />
               <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
             </div>

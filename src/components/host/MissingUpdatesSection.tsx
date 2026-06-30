@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { AlertTriangle, CloudLightning, Loader2, CheckCircle2, XCircle, RefreshCw, Rocket, Terminal } from 'lucide-react'
+import { AlertTriangle, CloudLightning, Loader2, CheckCircle2, XCircle, RefreshCw, Rocket, Terminal, ShieldAlert } from 'lucide-react'
 import { getMissingUpdates, getDeepScanUpdates, deployPatch } from '../../api/updates'
 import type { MissingUpdate } from '../../types/update'
 import { DataTable } from '../shared/DataTable'
@@ -139,7 +139,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
         header: isLinux ? 'Package' : 'KB',
         accessorKey: 'kb_id',
         cell: ({ getValue }) => (
-          <span className="font-semibold text-white font-mono text-xs">
+          <span className="font-semibold text-exia-text-primary font-mono text-xs">
             {getValue() as string}
           </span>
         ),
@@ -238,6 +238,38 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
         </button>
       </div>
 
+      {!loading && !error && (
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+          {(() => {
+            let cr = 0, hi = 0, md = 0, lo = 0
+            updates.forEach(u => {
+              if (u.severity === 'Critical') cr++
+              else if (u.severity === 'Important' || u.severity === 'High') hi++
+              else if (u.severity === 'Moderate' || u.severity === 'Medium') md++
+              else lo++
+            })
+            const penalty = cr * 25 + hi * 10 + md * 3 + lo * 1
+            const score = Math.max(0, 100 - penalty)
+            
+            let color = 'text-exia-green'
+            if (score < 50) color = 'text-exia-red'
+            else if (score < 80) color = 'text-exia-amber'
+
+            return (
+              <div className="depth-card rounded-xl p-4 flex items-center justify-between col-span-1 md:col-span-2 lg:col-span-1 border border-exia-border/30">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-exia-text-muted mb-1 font-semibold">Compliance Score</p>
+                  <p className={`text-3xl font-bold ${color}`}>{score}%</p>
+                </div>
+                <div className="relative h-12 w-12 flex items-center justify-center rounded-full border-4" style={{ borderColor: 'currentColor', color: color.replace('text-', 'var(--') + ')' }}>
+                  {score === 100 ? <CheckCircle2 size={20} /> : <ShieldAlert size={20} />}
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-12 text-exia-text-muted">
           <Loader2 size={18} className="animate-spin mr-2" />
@@ -293,7 +325,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
       {deployTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setDeployTarget(null); setScheduleTime('') }}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-bold text-white mb-2">Deploy {deployTarget.kb_id}</h2>
+            <h2 className="text-base font-bold text-exia-text-primary mb-2">Deploy {deployTarget.kb_id}</h2>
             <p className="text-sm text-exia-text-secondary mb-4">{deployTarget.title}</p>
             <div className="mb-4">
               <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
@@ -301,7 +333,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
                 type="datetime-local"
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
               />
               <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
             </div>
@@ -326,7 +358,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
       {showBulkConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShowBulkConfirm(false); setBulkScheduleTime('') }}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-bold text-white mb-2">Bulk Deploy</h2>
+            <h2 className="text-base font-bold text-exia-text-primary mb-2">Bulk Deploy</h2>
             <p className="text-sm text-exia-text-secondary mb-4">Install {selectedIndices.length} selected update(s) on this host?</p>
             <div className="mb-4">
               <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
@@ -334,7 +366,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
                 type="datetime-local"
                 value={bulkScheduleTime}
                 onChange={(e) => setBulkScheduleTime(e.target.value)}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
               />
               <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
             </div>
@@ -359,7 +391,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
       {showDeployAllConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setShowDeployAllConfirm(false); setAllScheduleTime('') }}>
           <div className="w-full max-w-md rounded-xl border border-exia-border/40 bg-exia-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-bold text-white mb-2">Deploy All</h2>
+            <h2 className="text-base font-bold text-exia-text-primary mb-2">Deploy All</h2>
             <p className="text-sm text-exia-text-secondary mb-4">Install all {updates.length} missing update(s) on this host?</p>
             <div className="mb-4">
               <label className="block text-xs font-medium text-exia-text-secondary mb-1">Schedule (optional)</label>
@@ -367,7 +399,7 @@ export function MissingUpdatesSection({ hostId, osType, hostname }: { hostId: st
                 type="datetime-local"
                 value={allScheduleTime}
                 onChange={(e) => setAllScheduleTime(e.target.value)}
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-white focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-navy px-3 py-2 text-sm text-exia-text-primary focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20"
               />
               <p className="text-[10px] text-exia-text-muted mt-1">Leave empty to deploy immediately</p>
             </div>

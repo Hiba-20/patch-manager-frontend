@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { ClipboardCheck, History, LayoutDashboard, Server, Shield, ShieldCheck, UserPlus, Users, Zap } from 'lucide-react'
+import { BarChart, ClipboardCheck, History, LayoutDashboard, Server, Settings, Shield, ShieldCheck, Users, Zap } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/',         label: 'Dashboard',     icon: LayoutDashboard },
@@ -7,11 +7,12 @@ const NAV_ITEMS = [
   { to: '/groups',   label: 'Groups',        icon: Users },
   { to: '/deployments', label: 'Deployments', icon: ClipboardCheck },
   { to: '/patches',  label: 'Patches',       icon: Shield },
+  { to: '/reports',  label: 'Reports',       icon: BarChart },
   { to: '/audit-log', label: 'Audit Log',     icon: History },
 ]
 
 const SETTINGS_ITEMS = [
-  { to: '/settings/invites', label: 'Invites', icon: UserPlus },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -23,7 +24,7 @@ export function Sidebar() {
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-exia-green shadow-glow-green" />
         </div>
         <div className="flex flex-col leading-none">
-          <span className="text-sm font-bold tracking-tight text-white">
+          <span className="text-sm font-bold tracking-tight text-exia-text-primary">
             exia<span className="text-exia-cyan">.</span>tech
           </span>
           <span className="text-[9px] font-medium uppercase tracking-[0.18em] text-exia-text-secondary">
@@ -48,13 +49,13 @@ export function Sidebar() {
                 `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'nav-active-glow bg-exia-cyan/[0.07] text-exia-cyan'
-                    : 'text-exia-text-secondary hover:bg-white/[0.03] hover:text-slate-200'
+                    : 'text-exia-text-secondary hover:bg-elevated hover:text-primary'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-exia-cyan' : 'text-exia-text-muted group-hover:text-slate-300 transition-colors'} />
+                    <Icon size={16} className={isActive ? 'text-exia-cyan' : 'text-exia-text-muted group-hover:text-primary transition-colors'} />
                   <span className="flex-1">{item.label}</span>
                   {isActive && (
                     <span className="h-1.5 w-1.5 rounded-full bg-exia-cyan shadow-glow-cyan animate-pulse-slow" />
@@ -79,13 +80,13 @@ export function Sidebar() {
                 `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'nav-active-glow bg-exia-cyan/[0.07] text-exia-cyan'
-                    : 'text-exia-text-secondary hover:bg-white/[0.03] hover:text-slate-200'
+                    : 'text-exia-text-secondary hover:bg-elevated hover:text-primary'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className={isActive ? 'text-exia-cyan' : 'text-exia-text-muted group-hover:text-slate-300 transition-colors'} />
+                    <Icon size={16} className={isActive ? 'text-exia-cyan' : 'text-exia-text-muted group-hover:text-primary transition-colors'} />
                   <span className="flex-1">{item.label}</span>
                   {isActive && (
                     <span className="h-1.5 w-1.5 rounded-full bg-exia-cyan shadow-glow-cyan animate-pulse-slow" />

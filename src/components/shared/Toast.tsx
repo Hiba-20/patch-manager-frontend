@@ -70,7 +70,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <span className="flex-1 text-exia-text-secondary font-medium">{t.message}</span>
             <button
               onClick={() => removeToast(t.id)}
-              className="text-exia-text-muted hover:text-white transition-colors"
+              className="text-exia-text-muted hover:text-exia-text-primary transition-colors"
             >
               <X size={12} />
             </button>

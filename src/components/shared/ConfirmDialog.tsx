@@ -49,10 +49,10 @@ export function ConfirmDialog({
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-white">{title}</h3>
+            <h3 className="text-sm font-bold text-exia-text-primary">{title}</h3>
             <p className="mt-1 text-xs text-exia-text-secondary leading-relaxed">{message}</p>
           </div>
-          <button onClick={onCancel} className="text-exia-text-muted hover:text-white transition-colors">
+          <button onClick={onCancel} className="text-exia-text-muted hover:text-exia-text-primary transition-colors">
             <X size={14} />
           </button>
         </div>
@@ -65,7 +65,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold text-white transition-all ${confirmBg}`}
+            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold text-exia-text-primary transition-all ${confirmBg}`}
           >
             {confirmLabel}
           </button>

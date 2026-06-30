@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Copy, Check, Loader2, Server, Monitor, Terminal, KeyRound } from 'lucide-react'
+import { X, Copy, Check, Loader2, Server, Monitor, Terminal, KeyRound, User, Lock } from 'lucide-react'
 import { createHost } from '../../api/hosts'
 import type { HostCreateResponse } from '../../types/host'
 
@@ -13,6 +13,10 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
   const [hostname, setHostname] = useState('')
   const [ipAddress, setIpAddress] = useState('')
   const [osType, setOsType] = useState('windows')
+  const [winrmUser, setWinrmUser] = useState('')
+  const [winrmPassword, setWinrmPassword] = useState('')
+  const [sshUser, setSshUser] = useState('')
+  const [sshPassword, setSshPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<HostCreateResponse | null>(null)
@@ -24,7 +28,7 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await createHost(hostname, ipAddress, osType)
+      const res = await createHost(hostname, ipAddress, osType, winrmUser || undefined, winrmPassword || undefined, sshUser || undefined, sshPassword || undefined)
       setResult(res)
       onCreated()
     } catch (err: unknown) {
@@ -60,6 +64,10 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
     setHostname('')
     setIpAddress('')
     setOsType('windows')
+    setWinrmUser('')
+    setWinrmPassword('')
+    setSshUser('')
+    setSshPassword('')
     setCopied(false)
     onClose()
   }
@@ -71,18 +79,18 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-md rounded-xl border border-exia-border/60 shadow-card-lg overflow-hidden"
-        style={{ background: '#0b1120' }}
+        style={{ background: 'var(--card)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-exia-cyan/30 to-transparent" />
 
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-base font-bold text-white tracking-tight">
+          <h2 className="text-base font-bold text-exia-text-primary tracking-tight">
             {result ? 'Host Registered' : 'Add Host'}
           </h2>
           <button
             onClick={handleClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-exia-text-muted hover:text-exia-text-secondary hover:bg-white/[0.05] transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-exia-text-muted hover:text-exia-text-secondary hover:bg-elevated transition-colors"
           >
             <X size={15} />
           </button>
@@ -107,7 +115,7 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => setHostname(e.target.value)}
                 placeholder="e.g. win10-prod-01"
                 required
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               />
             </div>
 
@@ -122,7 +130,7 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => setIpAddress(e.target.value)}
                 placeholder="e.g. 192.168.56.5"
                 required
-                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-white placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
               />
             </div>
 
@@ -156,6 +164,70 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
                 </button>
               </div>
             </div>
+
+            {osType === 'windows' ? (
+              <>
+                <div className="h-px bg-exia-border/20" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-exia-text-muted">WinRM Credentials</p>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <User size={13} />
+                    WinRM Username
+                  </label>
+                  <input
+                    type="text"
+                    value={winrmUser}
+                    onChange={(e) => setWinrmUser(e.target.value)}
+                    placeholder="e.g. Administrator"
+                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <Lock size={13} />
+                    WinRM Password
+                  </label>
+                  <input
+                    type="password"
+                    value={winrmPassword}
+                    onChange={(e) => setWinrmPassword(e.target.value)}
+                    placeholder="WinRM password"
+                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="h-px bg-exia-border/20" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-exia-text-muted">SSH Credentials</p>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <User size={13} />
+                    SSH Username
+                  </label>
+                  <input
+                    type="text"
+                    value={sshUser}
+                    onChange={(e) => setSshUser(e.target.value)}
+                    placeholder="e.g. root"
+                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-exia-text-secondary mb-2">
+                    <Lock size={13} />
+                    SSH Password
+                  </label>
+                  <input
+                    type="password"
+                    value={sshPassword}
+                    onChange={(e) => setSshPassword(e.target.value)}
+                    placeholder="SSH password or key passphrase"
+                    className="w-full rounded-lg border border-exia-border/50 bg-exia-card px-3.5 py-2.5 text-sm text-exia-text-primary placeholder:text-exia-text-muted focus:border-exia-cyan/40 focus:outline-none focus:ring-1 focus:ring-exia-cyan/20 transition-colors"
+                  />
+                </div>
+              </>
+            )}
 
             <button
               onClick={handleSubmit}
@@ -212,7 +284,7 @@ export function AddHostModal({ open, onClose, onCreated }: Props) {
 
             <button
               onClick={handleClose}
-              className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2.5 text-sm font-medium text-exia-text-secondary hover:text-white hover:border-exia-cyan/30 transition-colors"
+              className="w-full rounded-lg border border-exia-border/50 bg-exia-card py-2.5 text-sm font-medium text-exia-text-secondary hover:text-exia-text-primary hover:border-exia-cyan/30 transition-colors"
             >
               Done
             </button>

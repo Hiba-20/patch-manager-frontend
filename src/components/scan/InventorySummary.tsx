@@ -13,7 +13,7 @@ function StatRow({ icon: Icon, label, value, accent }: { icon: typeof Server; la
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-exia-text-muted">{label}</p>
-        <p className={`text-sm font-medium truncate ${accent || 'text-white'}`}>{value}</p>
+        <p className={`text-sm font-medium truncate ${accent || 'text-exia-text-primary'}`}>{value}</p>
       </div>
     </div>
   )
@@ -61,7 +61,7 @@ export function InventorySummary({ data }: InventorySummaryProps) {
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-exia-text-muted">Memory</p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-exia-text-secondary">{data.ram_total_gb} GB total</span>
-                    <span className="text-xs font-medium text-white">{data.ram_used_percent != null ? `${data.ram_used_percent}% used` : 'Unknown'}</span>
+                    <span className="text-xs font-medium text-exia-text-primary">{data.ram_used_percent != null ? `${data.ram_used_percent}% used` : 'Unknown'}</span>
                   </div>
                   {data.ram_used_percent != null && (
                     <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden mt-1.5">
@@ -83,7 +83,7 @@ export function InventorySummary({ data }: InventorySummaryProps) {
                   <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-exia-text-muted">Disk</p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-exia-text-secondary">{diskTotal} total</span>
-                    <span className="text-xs font-medium text-white">{diskUsed} used</span>
+                    <span className="text-xs font-medium text-exia-text-primary">{diskUsed} used</span>
                   </div>
                   {diskUsedPercent != null && (
                     <div className="h-1.5 w-full bg-exia-elevated rounded-full overflow-hidden mt-1.5">

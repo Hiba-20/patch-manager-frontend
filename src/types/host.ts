@@ -5,6 +5,10 @@ export interface HostResponse {
   os_type: string
   status: string
   created_at: string
+  winrm_user: string | null
+  winrm_password: string | null
+  ssh_user: string | null
+  ssh_password: string | null
 }
 
 export interface HostCreateResponse extends HostResponse {

@@ -53,10 +53,10 @@ export function ComplianceTrendChart({ data }: ComplianceTrendChartProps) {
               <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis
             dataKey="date"
-            tick={{ fill: '#4a5a78', fontSize: 10 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(val: string) => format(parseISO(val), 'MMM d')}
@@ -64,12 +64,12 @@ export function ComplianceTrendChart({ data }: ComplianceTrendChartProps) {
           />
           <YAxis
             domain={[0, 100]}
-            tick={{ fill: '#4a5a78', fontSize: 10 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v: number) => `${v}%`}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(34,211,238,0.2)', strokeWidth: 1 }} />
+           <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--accent-cyan)', strokeWidth: 1, strokeOpacity: 0.2 }} />
           <Area
             type="monotone"
             dataKey="compliance_rate"
@@ -79,7 +79,7 @@ export function ComplianceTrendChart({ data }: ComplianceTrendChartProps) {
             animationDuration={600}
             animationEasing="ease-out"
             dot={false}
-            activeDot={{ r: 4, fill: '#22d3ee', stroke: '#0f1729', strokeWidth: 2 }}
+            activeDot={{ r: 4, fill: 'var(--accent-cyan)', stroke: 'var(--card)', strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
