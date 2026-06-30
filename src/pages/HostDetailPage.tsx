@@ -11,7 +11,10 @@ import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { useToast } from '../components/shared/Toast'
 import { TopBar } from '../components/layout/TopBar'
+import { MissingUpdatesSection } from '../components/host/MissingUpdatesSection'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { SoftwareItem, PatchOnHost } from '../types/host'
 
@@ -62,20 +65,18 @@ export function HostDetailPage() {
   const { data: host, loading: hostLoading, error: hostError } = useHost(hostId)
   const { data: sw, loading: swLoading, error: swError } = useHostSoftware(hostId)
   const [scanning, setScanning] = useState(false)
-  const [scanStatus, setScanStatus] = useState<'idle' | 'success' | 'failed'>('idle')
-  const [scanError, setScanError] = useState<string | null>(null)
+  const [showScanConfirm, setShowScanConfirm] = useState(false)
+  const toast = useToast()
 
   const handleLaunchScan = async () => {
     if (!hostId || scanning) return
     setScanning(true)
-    setScanStatus('idle')
-    setScanError(null)
+    setShowScanConfirm(false)
     try {
       await triggerScan(hostId)
-      setScanStatus('success')
+      toast.success('Scan launched successfully')
     } catch (e: unknown) {
-      setScanStatus('failed')
-      setScanError((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? (e as Error)?.message ?? 'Scan failed')
+      toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? (e as Error)?.message ?? 'Scan failed')
     } finally {
       setScanning(false)
     }
@@ -241,7 +242,7 @@ export function HostDetailPage() {
               </Link>
 
               <button
-                onClick={handleLaunchScan}
+                onClick={() => setShowScanConfirm(true)}
                 disabled={scanning}
                 className="group flex w-full items-center justify-between rounded-lg border border-exia-cyan/20 bg-exia-cyan/[0.05] px-4 py-3 text-sm font-medium text-exia-cyan transition-all hover:border-exia-cyan/40 hover:bg-exia-cyan/10 disabled:opacity-60"
               >
@@ -256,28 +257,21 @@ export function HostDetailPage() {
                 {!scanning && <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />}
               </button>
 
-              {scanStatus === 'success' && (
-                <div className="flex items-center gap-2 rounded-lg border border-exia-green/20 bg-exia-green/[0.06] px-4 py-2.5 text-xs animate-fade-in">
-                  <CheckCircle2 size={14} className="text-exia-green flex-shrink-0" />
-                  <span className="text-exia-green font-medium">Scan launched successfully</span>
-                  <button
-                    onClick={() => navigate(`/hosts/${hostId}/scan`)}
-                    className="ml-auto text-exia-text-secondary hover:text-exia-cyan underline transition-colors"
-                  >
-                    View
-                  </button>
-                </div>
-              )}
-
-              {scanStatus === 'failed' && (
-                <div className="flex items-center gap-2 rounded-lg border border-exia-red/20 bg-exia-red/[0.06] px-4 py-2.5 text-xs animate-fade-in">
-                  <XCircle size={14} className="text-exia-red flex-shrink-0" />
-                  <span className="text-exia-red font-medium">{scanError || 'Scan failed'}</span>
-                </div>
-              )}
+              <ConfirmDialog
+                open={showScanConfirm}
+                title="Launch Scan"
+                message="Start a new inventory scan for this host?"
+                confirmLabel="Launch Scan"
+                onConfirm={handleLaunchScan}
+                onCancel={() => setShowScanConfirm(false)}
+              />
             </div>
           </div>
         </div>
+
+        {host.os_type === 'windows' && hostId && (
+          <MissingUpdatesSection hostId={hostId} />
+        )}
 
         <section>
           <SectionHeader title="Installed Software" count={sw?.software.length ?? 0} />

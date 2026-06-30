@@ -20,10 +20,16 @@ function StatRow({ icon: Icon, label, value, accent }: { icon: typeof Server; la
 }
 
 export function InventorySummary({ data }: InventorySummaryProps) {
-  const diskParts = data.disk_info?.match(/(\d+G)\s+(\d+G)\s+(\d+)%/)
-  const diskUsedPercent = diskParts ? parseInt(diskParts[3]) : null
-  const diskTotal = diskParts?.[1] ?? null
-  const diskUsed = diskParts?.[2] ?? null
+  let diskUsedPercent: number | null = null
+  let diskTotal: string | null = null
+  let diskUsed: string | null = null
+
+  if (typeof data.disk_info === 'string') {
+    const diskParts = data.disk_info.match(/(\d+G)\s+(\d+G)\s+(\d+)%/)
+    diskUsedPercent = diskParts ? parseInt(diskParts[3]) : null
+    diskTotal = diskParts?.[1] ?? null
+    diskUsed = diskParts?.[2] ?? null
+  }
 
   return (
     <div className="space-y-6">

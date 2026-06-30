@@ -5,6 +5,7 @@ import { useTrendHistory } from '../hooks/useTrendHistory'
 import { StatsCard } from '../components/shared/StatsCard'
 import { ComplianceTrendChart } from '../components/dashboard/ComplianceTrendChart'
 import { SeverityBreakdownChart } from '../components/dashboard/SeverityBreakdownChart'
+import { MissingUpdatesCard } from '../components/dashboard/MissingUpdatesCard'
 import { LoadingSpinner } from '../components/shared/LoadingSpinner'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
@@ -154,10 +155,10 @@ export function DashboardPage() {
               </span>
             </div>
             <SeverityBreakdownChart
-              criticalCount={Math.max(0, Math.round((data?.critical_high_patches ?? 0) * 0.6))}
-              highCount={Math.max(0, Math.round((data?.critical_high_patches ?? 0) * 0.4))}
-              mediumCount={0}
-              lowCount={0}
+              criticalCount={data?.critical_count ?? 0}
+              highCount={data?.high_count ?? 0}
+              mediumCount={data?.medium_count ?? 0}
+              lowCount={data?.low_count ?? 0}
             />
             <p className="mt-2 text-[11px] text-exia-text-muted text-center">
               {(data?.critical_high_patches ?? 0) > 0
@@ -260,6 +261,8 @@ export function DashboardPage() {
             </p>
           </div>
         </div>
+
+        <MissingUpdatesCard />
       </div>
     </>
   )
