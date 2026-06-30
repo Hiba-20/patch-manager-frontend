@@ -14,7 +14,7 @@ import { useState, useMemo, useId } from 'react'
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { cn } from '../../utils/cn'
 
-interface DataTableProps<T extends Record<string, unknown>> {
+interface DataTableProps<T extends object> {
   data: T[]
   columns: ColumnDef<T>[]
   onRowClick?: (row: T) => void
@@ -29,7 +29,7 @@ interface DataTableProps<T extends Record<string, unknown>> {
   className?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   data,
   columns,
   onRowClick,
@@ -49,7 +49,7 @@ export function DataTable<T extends Record<string, unknown>>({
   const [globalFilter, setGlobalFilter] = useState('')
   const tableId = useId()
 
-  const tableData = useMemo(() => (loading ? Array(pageSize).fill({}) as T[] : data), [data, loading, pageSize])
+  const tableData = useMemo(() => (loading ? Array(pageSize).fill(null).map(() => ({})) as T[] : data), [data, loading, pageSize])
 
   const tableColumns = useMemo<ColumnDef<T>[]>(() => {
     if (!loading) return columns

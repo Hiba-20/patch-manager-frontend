@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, LayoutDashboard, Server, Scan, Command } from 'lucide-react'
+import { Search, LayoutDashboard, Server, Scan, Shield, History, Command } from 'lucide-react'
 
 interface CommandItem {
   id: string
@@ -60,6 +60,20 @@ export function CommandPalette() {
       description: 'View most recent scan results',
       icon: Scan,
       action: () => { navigate('/hosts'); setOpen(false) },
+    },
+    {
+      id: 'patches',
+      label: 'Patch Catalog',
+      description: 'Browse and manage security patches',
+      icon: Shield,
+      action: () => { navigate('/patches'); setOpen(false) },
+    },
+    {
+      id: 'audit',
+      label: 'Audit Log',
+      description: 'View security and activity events',
+      icon: History,
+      action: () => { navigate('/audit-log'); setOpen(false) },
     },
   ]
 

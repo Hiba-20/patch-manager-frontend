@@ -19,11 +19,11 @@ export function useTriggerScan(hostId: string | undefined): UseTriggerScanResult
   const [state, setState] = useState<ScanState>('idle')
   const [result, setResult] = useState<LatestScanResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval>>()
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const pollCountRef = useRef(0)
 
   const stopPolling = useCallback(() => {
-    if (pollRef.current) {
+    if (pollRef.current !== undefined) {
       clearInterval(pollRef.current)
       pollRef.current = undefined
     }

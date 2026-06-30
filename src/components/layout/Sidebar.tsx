@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Server, ShieldCheck, Zap } from 'lucide-react'
+import { History, LayoutDashboard, Server, Shield, ShieldCheck, Zap } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { to: '/',      label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/hosts', label: 'Hosts',     icon: Server },
+  { to: '/',         label: 'Dashboard',  icon: LayoutDashboard },
+  { to: '/hosts',    label: 'Hosts',      icon: Server },
+  { to: '/patches',  label: 'Patches',    icon: Shield },
+  { to: '/audit-log', label: 'Audit Log',  icon: History },
 ]
 
 export function Sidebar() {
