@@ -11,6 +11,13 @@ export interface HostResponse {
   ssh_password: string | null
 }
 
+export interface DiscoveredHost {
+  ip_address: string
+  os_type: 'linux' | 'windows'
+  hostname: string
+  winrm_ok: boolean | null
+}
+
 export interface HostCreateResponse extends HostResponse {
   api_key: string
 }
