@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { BrainCircuit, MessageSquarePlus, Trash2 } from 'lucide-react'
+import { BrainCircuit, MessageSquarePlus, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { ChatMessage } from '../components/ai/ChatMessage'
 import { ChatInput } from '../components/ai/ChatInput'
 import { ConversationSidebar } from '../components/ai/ConversationSidebar'
@@ -16,6 +16,7 @@ const SUGGESTIONS = [
 ]
 
 const STORAGE_KEY = 'ai-conversations'
+const SIDEBAR_STORAGE_KEY = 'ai-sidebar-open'
 
 function loadConversations(): Conversation[] {
   try {
@@ -40,6 +41,10 @@ export function AIAssistantPage() {
   const [conversations, setConversations] = useState<Conversation[]>(loadConversations)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_STORAGE_KEY) !== 'false' }
+    catch { return true }
+  })
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const activeConv = conversations.find((c) => c.id === activeId) ?? null
@@ -47,6 +52,10 @@ export function AIAssistantPage() {
   useEffect(() => {
     saveConversations(conversations)
   }, [conversations])
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarOpen))
+  }, [sidebarOpen])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,22 +93,21 @@ export function AIAssistantPage() {
     }
   }, [])
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      await deleteConversationAPI(id)
-    } catch { /* server-side might be gone, that's ok */ }
-    setConversations((prev) => {
-      const next = prev.filter((c) => c.id !== id)
-      if (activeId === id) {
-        setActiveId(next[0]?.id ?? null)
-      }
-      return next
-    })
+  const handleDelete = useCallback((id: string) => {
+    setConversations((prev) => prev.filter((c) => c.id !== id))
+    if (activeId === id) {
+      setActiveId(null)
+    }
+    deleteConversationAPI(id).catch(() => {})
   }, [activeId])
 
   const handleSelect = useCallback((id: string) => {
     setActiveId(id)
   }, [])
+
+  const handleRename = useCallback((id: string, newTitle: string) => {
+    updateConversation(id, (c) => ({ ...c, title: newTitle, updatedAt: new Date().toISOString() }))
+  }, [updateConversation])
 
   const handleSend = useCallback(async (question: string) => {
     if (!activeId) return
@@ -143,31 +151,31 @@ export function AIAssistantPage() {
     }
   }, [activeId, updateConversation])
 
-  const handleClear = useCallback(() => {
-    if (!activeId) return
-    updateConversation(activeId, (c) => ({
-      ...c,
-      title: 'Nouvelle discussion',
-      messages: [],
-      updatedAt: new Date().toISOString(),
-    }))
-  }, [activeId, updateConversation])
-
   const messages = activeConv?.messages ?? []
 
   return (
     <div className="flex h-full">
-      <ConversationSidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={handleSelect}
-        onNew={handleNew}
-        onDelete={handleDelete}
-      />
+      {sidebarOpen && (
+        <ConversationSidebar
+          conversations={conversations}
+          activeId={activeId}
+          onSelect={handleSelect}
+          onNew={handleNew}
+          onDelete={handleDelete}
+          onRename={handleRename}
+        />
+      )}
 
       <div className="mx-auto flex h-full max-w-3xl flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-exia-border/20 px-6 py-4">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen((p) => !p)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-exia-text-muted transition-colors hover:bg-exia-cyan/10 hover:text-exia-cyan"
+              title={sidebarOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
+            >
+              {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+            </button>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20">
               <BrainCircuit size={20} className="text-purple-400" />
             </div>
@@ -179,15 +187,6 @@ export function AIAssistantPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <button
-                onClick={handleClear}
-                className="flex items-center gap-1.5 rounded-lg border border-exia-border/20 px-3 py-1.5 text-xs text-exia-text-muted transition-colors hover:border-red-400/30 hover:text-red-400"
-              >
-                <Trash2 size={12} />
-                Effacer
-              </button>
-            )}
             <button
               onClick={handleNew}
               className="flex items-center gap-1.5 rounded-lg bg-exia-cyan/10 px-3 py-1.5 text-xs font-medium text-exia-cyan transition-colors hover:bg-exia-cyan/20"

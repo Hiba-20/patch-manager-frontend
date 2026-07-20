@@ -1,10 +1,20 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { login as apiLogin, register as apiRegister, getMe, type AuthResponse } from '../api/auth'
+import {
+  login as apiLogin,
+  register as apiRegister,
+  verifyMfa as apiVerifyMfa,
+  resendMfaCode as apiResendMfaCode,
+  getMe,
+  type AuthResponse,
+  type LoginMfaResponse,
+} from '../api/auth'
 
 interface AuthContextType {
   user: AuthResponse | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<AuthResponse | LoginMfaResponse>
+  verifyMfa: (mfaToken: string, code: string) => Promise<void>
+  resendMfaCode: (mfaToken: string) => Promise<LoginMfaResponse>
   register: (username: string, email: string, password: string, inviteCode: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
@@ -44,8 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiLogin({ email, password })
+    if ('token' in res) {
+      setStoredToken(res.token)
+      setUser(res)
+    }
+    return res
+  }, [])
+
+  const verifyMfa = useCallback(async (mfaToken: string, code: string) => {
+    const res = await apiVerifyMfa({ mfa_token: mfaToken, code })
     setStoredToken(res.token)
     setUser(res)
+  }, [])
+
+  const resendMfaCode = useCallback(async (mfaToken: string) => {
+    return await apiResendMfaCode(mfaToken)
   }, [])
 
   const register = useCallback(async (username: string, email: string, password: string, inviteCode: string) => {
@@ -60,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, verifyMfa, resendMfaCode, register, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   )

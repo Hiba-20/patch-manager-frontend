@@ -13,11 +13,13 @@ import {
   Copy,
   Check,
   Loader2,
+  Lock,
 } from 'lucide-react'
 import { TopBar } from '../components/layout/TopBar'
 import { useToast } from '../components/shared/Toast'
 import { getSchedulerStatus, triggerScanNow, type SchedulerStatusResponse } from '../api/settings'
 import { getInvites, revokeInvite, type InviteResponse } from '../api/invites'
+import { toggleMfa } from '../api/auth'
 import { GenerateInviteModal } from '../components/invites/GenerateInviteModal'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
@@ -26,6 +28,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 const TABS = [
   { id: 'scheduler', label: 'Scheduler', icon: Clock },
+  { id: 'security', label: 'Security', icon: Lock },
   { id: 'invites', label: 'Invites', icon: Users },
   { id: 'about', label: 'About', icon: Terminal },
 ] as const
@@ -43,6 +46,9 @@ export function SettingsPage() {
   const [showGenerate, setShowGenerate] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const [mfaEnabled, setMfaEnabled] = useState(false)
+  const [mfaToggling, setMfaToggling] = useState(false)
 
   const fetchStatus = async () => {
     setLoading(true)
@@ -114,6 +120,19 @@ export function SettingsPage() {
     }
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const handleToggleMfa = async () => {
+    setMfaToggling(true)
+    try {
+      const res = await toggleMfa(!mfaEnabled)
+      setMfaEnabled(res.mfa_enabled)
+      toast.success(res.message)
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || 'Failed to update MFA settings')
+    } finally {
+      setMfaToggling(false)
+    }
   }
 
   const inviteColumns: ColumnDef<InviteResponse>[] = [
@@ -272,6 +291,52 @@ export function SettingsPage() {
                       {triggering ? 'Running Scan...' : 'Trigger Scan Now'}
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div className="space-y-6">
+              <div className="depth-card rounded-xl p-6">
+                <div className="flex items-center gap-3 border-b border-theme pb-4 mb-4">
+                  <div className="p-2 rounded-lg bg-exia-cyan/10 text-exia-cyan">
+                    <Lock size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-primary">Two-Factor Authentication</h2>
+                    <p className="text-sm text-muted">Enhance account security with email-based 2FA</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-surface border border-theme">
+                    <div>
+                      <p className="text-sm font-medium text-primary">Email MFA</p>
+                      <p className="text-xs text-muted mt-0.5">
+                        When enabled, a 6-digit code will be sent to your email at each login.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleToggleMfa}
+                      disabled={mfaToggling}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        mfaEnabled ? 'bg-exia-cyan' : 'bg-exia-border'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          mfaEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {mfaEnabled && (
+                    <div className="p-3 rounded-lg bg-exia-green/[0.06] border border-exia-green/20">
+                      <p className="text-xs text-exia-green">
+                        Two-factor authentication is active. You will be prompted for a verification code on your next login.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
