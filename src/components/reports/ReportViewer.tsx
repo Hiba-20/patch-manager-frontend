@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import ReactMarkdown from 'react-markdown'
 import {
   FileText,
   Download,
@@ -12,6 +13,9 @@ import {
   Server,
   Activity,
   MessageSquare,
+  Sparkles,
+  RotateCw,
+  Loader2,
 } from 'lucide-react'
 import { timeAgo } from '../../utils/relativeTime'
 import type {
@@ -24,6 +28,7 @@ import type {
   DocByHost,
   DocFailureAnalysis,
 } from '../../types/report'
+import { analyzeReport } from '../../api/ai'
 
 type ReportViewerProps = {
   type: 'compliance' | 'deployment'
@@ -117,6 +122,23 @@ export function ReportViewer({ type, reportData }: ReportViewerProps) {
     return arr
   }, [dData, sortKey, sortDir])
 
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+
+  const handleGenerateAI = async () => {
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const res = await analyzeReport({ report_type: type, report_data: reportData as any })
+      setAiAnalysis(res.analysis)
+    } catch {
+      setAiError("L'analyse IA n'a pas pu être générée. Vérifiez que le service IA est accessible.")
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   const printReport = () => window.print()
 
   const exportReportCSV = () => {
@@ -178,6 +200,65 @@ export function ReportViewer({ type, reportData }: ReportViewerProps) {
             <Printer size={13} /> Print
           </button>
         </div>
+      </div>
+
+      {/* ── AI ANALYSIS ── */}
+      <div className="mb-8 no-print">
+        {!aiAnalysis && !aiLoading && !aiError && (
+          <button
+            onClick={handleGenerateAI}
+            className="w-full rounded-xl border border-dashed border-purple-500/30 bg-purple-500/[0.02] p-5 flex items-center justify-center gap-2 text-sm text-exia-text-secondary transition-all hover:border-purple-500/50 hover:bg-purple-500/[0.05] hover:text-purple-400 cursor-pointer group"
+          >
+            <Sparkles size={18} className="text-purple-400/60 group-hover:text-purple-400" />
+            <span className="font-medium">Générer l'analyse IA</span>
+          </button>
+        )}
+
+        {aiLoading && (
+          <div className="rounded-xl border border-purple-500/20 bg-purple-500/[0.03] p-5 flex items-center justify-center gap-3">
+            <Loader2 size={18} className="animate-spin text-purple-400" />
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Analyse en cours...</span>
+          </div>
+        )}
+
+        {aiError && (
+          <div className="rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4 flex items-center justify-between">
+            <span className="text-xs" style={{ color: 'var(--accent-red)' }}>{aiError}</span>
+            <button onClick={handleGenerateAI} className="flex items-center gap-1 text-xs font-medium" style={{ color: 'var(--accent-red)' }}>
+              <RotateCw size={12} /> Réessayer
+            </button>
+          </div>
+        )}
+
+        {aiAnalysis && (
+          <div
+            className="rounded-xl border p-5"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--accent-purple, #a855f7) 6%, var(--card))',
+              borderColor: 'color-mix(in srgb, var(--accent-purple, #a855f7) 25%, var(--border-subtle))',
+              borderLeft: '3px solid var(--accent-purple, #a855f7)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} style={{ color: 'var(--accent-purple, #a855f7)' }} />
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Analyse IA</span>
+              </div>
+              <button
+                onClick={handleGenerateAI}
+                disabled={aiLoading}
+                className="flex items-center gap-1.5 text-xs font-medium opacity-60 hover:opacity-100 transition-opacity disabled:opacity-30"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <RotateCw size={13} className={aiLoading ? 'animate-spin' : ''} />
+                Régénérer
+              </button>
+            </div>
+            <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+              <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── EXECUTIVE SUMMARY ── */}

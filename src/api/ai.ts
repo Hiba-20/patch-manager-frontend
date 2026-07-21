@@ -1,5 +1,14 @@
 import apiClient from './client'
 import type { ChatResponse, ConversationSummary, ConversationMessages, CreateConversationResponse } from '../types/ai'
+import type { ComplianceDocumentResponse, DeploymentDocumentResponse } from '../types/report'
+
+export async function analyzeReport(req: {
+  report_type: 'compliance' | 'deployment'
+  report_data: ComplianceDocumentResponse | DeploymentDocumentResponse
+}): Promise<{ analysis: string }> {
+  const { data } = await apiClient.post<{ analysis: string }>('/ai/analyze-report', req)
+  return data
+}
 
 export async function askAI(question: string, session_id?: string): Promise<ChatResponse> {
   const { data } = await apiClient.post<ChatResponse>('/ai/chat', { question, session_id })
