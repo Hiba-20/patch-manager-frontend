@@ -14,7 +14,8 @@ import { getRiskMatrixReport } from '../api/reports'
 import type { HostRiskRow } from '../types/report'
 import { AddHostModal } from '../components/hosts/AddHostModal'
 import { EditHostModal } from '../components/hosts/EditHostModal'
-import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ScanNetworkModal } from '../components/hosts/ScanNetworkModal'
+import { Server, Monitor, Terminal, ChevronRight, X, AlertTriangle, Plus, Pencil, Trash2, Network } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { HostResponse } from '../types/host'
 import { timeAgo } from '../utils/relativeTime'
@@ -31,6 +32,7 @@ export function HostsPage() {
   const [filters, setFilters] = useState<HostFilters>(DEFAULT_HOST_FILTERS)
   const [riskMap, setRiskMap] = useState<Record<string, HostRiskRow>>({})
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showScanModal, setShowScanModal] = useState(false)
   const [editTarget, setEditTarget] = useState<HostResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<HostResponse | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -237,6 +239,13 @@ export function HostsPage() {
             )}
 
             <button
+              onClick={() => setShowScanModal(true)}
+              className="flex items-center gap-2 rounded-lg border border-exia-border/50 bg-exia-card px-4 py-2 text-sm font-semibold text-exia-text-secondary transition-all hover:text-exia-cyan hover:border-exia-cyan/30"
+            >
+              <Network size={15} />
+              Scan Network
+            </button>
+            <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 rounded-lg bg-exia-cyan px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-exia-cyan/90 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]"
             >
@@ -268,6 +277,12 @@ export function HostsPage() {
           }
         />
       </div>
+
+      <ScanNetworkModal
+        open={showScanModal}
+        onClose={() => setShowScanModal(false)}
+        onCreated={() => refetch()}
+      />
 
       <AddHostModal
         open={showAddModal}

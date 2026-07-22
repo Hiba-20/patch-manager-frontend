@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { HostResponse, HostSoftwareResponse, HostCreateResponse } from '../types/host'
+import type { DiscoveredHost, HostResponse, HostSoftwareResponse, HostCreateResponse } from '../types/host'
 
 export async function getHosts(): Promise<HostResponse[]> {
   const { data } = await apiClient.get<HostResponse[]>('/hosts')
@@ -40,5 +40,15 @@ export async function deleteHost(hostId: string): Promise<void> {
 
 export async function getSshPublicKey(): Promise<{ public_key: string }> {
   const { data } = await apiClient.get<{ public_key: string }>('/hosts/ssh-public-key')
+  return data
+}
+
+export async function scanNetwork(cidr: string, sshUser?: string, winrmUser?: string, winrmPassword?: string): Promise<{ elapsed_seconds: number; hosts: DiscoveredHost[] }> {
+  const { data } = await apiClient.post<{ elapsed_seconds: number; hosts: DiscoveredHost[] }>('/hosts/scan-network', {
+    cidr,
+    ssh_user: sshUser || null,
+    winrm_user: winrmUser || null,
+    winrm_password: winrmPassword || null,
+  })
   return data
 }
