@@ -2,11 +2,13 @@ import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, Shield, Bug, Calendar, Server, Package } from 'lucide-react'
 import { getPatch, getDeployments, getPatchAffectedHosts, type PatchResponse, type DeploymentResponse, type AffectedHostsResponse } from '../api/patches'
+import { getPredictedRisk, type RiskPrediction } from '../api/ai'
 import { DataTable } from '../components/shared/DataTable'
 import { StatusBadge } from '../components/shared/StatusBadge'
 import { PatchDetailSkeleton } from '../components/skeletons/PatchDetailSkeleton'
 import { ErrorAlert } from '../components/shared/ErrorAlert'
 import { TopBar } from '../components/layout/TopBar'
+import { RiskBadge, RiskBadgeSkeleton } from '../components/patches/RiskBadge'
 import type { ColumnDef } from '@tanstack/react-table'
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -25,6 +27,8 @@ export function PatchDetailPage() {
   const [affected, setAffected] = useState<AffectedHostsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [riskPredictions, setRiskPredictions] = useState<Record<string, RiskPrediction>>({})
+  const [riskLoading, setRiskLoading] = useState(false)
 
   useEffect(() => {
     if (!patchId) return
@@ -38,6 +42,28 @@ export function PatchDetailPage() {
       .catch((e) => setError(e?.response?.data?.detail ?? e?.message ?? 'Failed to load patch'))
       .finally(() => setLoading(false))
   }, [patchId])
+
+  useEffect(() => {
+    if (!patchId || !affected?.hosts.length) return
+    setRiskLoading(true)
+    setRiskPredictions({})
+    const hosts = affected.hosts
+    Promise.all(
+      hosts.map((h) =>
+        getPredictedRisk(patchId, h.host_id)
+          .then((result) => ({ hostId: h.host_id, result }))
+          .catch(() => null),
+      ),
+    )
+      .then((results) => {
+        const map: Record<string, RiskPrediction> = {}
+        for (const r of results) {
+          if (r) map[r.hostId] = r.result
+        }
+        setRiskPredictions(map)
+      })
+      .finally(() => setRiskLoading(false))
+  }, [patchId, affected])
 
   const depColumns = useMemo<ColumnDef<DeploymentResponse>[]>(
     () => [
@@ -80,8 +106,18 @@ export function PatchDetailPage() {
       { header: 'Host', accessorKey: 'hostname', cell: ({ getValue }) => <span className="font-medium text-exia-text-primary">{getValue() as string}</span> },
       { header: 'IP', accessorKey: 'ip_address', cell: ({ getValue }) => <span className="font-mono text-xs text-secondary">{getValue() as string}</span> },
       { header: 'OS', accessorKey: 'os_type', cell: ({ getValue }) => <span className="capitalize">{getValue() as string}</span> },
+      {
+        header: 'Risk',
+        id: 'risk',
+        cell: ({ row }) => {
+          const hostId = row.original.host_id as string
+          const pred = riskPredictions[hostId]
+          if (!pred) return <RiskBadgeSkeleton />
+          return <RiskBadge riskLevel={pred.risk_level} method={pred.method} reasons={pred.reasons} />
+        },
+      },
     ],
-    []
+    [riskPredictions]
   )
 
   if (loading) return <PatchDetailSkeleton />

@@ -20,7 +20,7 @@ export function ChatMessage({ message }: Props) {
         {isUser ? (
           <p className="whitespace-pre-wrap">{message.content}</p>
         ) : (
-          <div className="prose prose-sm max-w-none
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap
               [&_strong]:font-semibold
               [&_ul]:list-disc [&_ul]:pl-4
               [&_li]:mb-1

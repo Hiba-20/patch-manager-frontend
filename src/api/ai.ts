@@ -33,3 +33,15 @@ export async function getConversationMessages(session_id: string): Promise<Conve
 export async function deleteConversationAPI(session_id: string): Promise<void> {
   await apiClient.delete(`/ai/conversations/${session_id}`)
 }
+
+export interface RiskPrediction {
+  risk_level: 'Low' | 'Medium' | 'High'
+  method: 'heuristic' | 'ml'
+  confidence?: number
+  reasons?: string[]
+}
+
+export async function getPredictedRisk(patchId: string, hostId: string): Promise<RiskPrediction> {
+  const { data } = await apiClient.get<RiskPrediction>(`/ai/predict/${patchId}/${hostId}`)
+  return data
+}
