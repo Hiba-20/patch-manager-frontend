@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { BarChart, ClipboardCheck, History, LayoutDashboard, Server, Settings, Shield, ShieldCheck, Users, Zap } from 'lucide-react'
+import { BarChart, BrainCircuit, ClipboardCheck, History, LayoutDashboard, Server, Settings, Shield, ShieldCheck, Users, Zap } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/',         label: 'Dashboard',     icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/patches',  label: 'Patches',       icon: Shield },
   { to: '/reports',  label: 'Reports',       icon: BarChart },
   { to: '/audit-log', label: 'Audit Log',     icon: History },
+  { to: '/ai-assistant', label: 'AI Assistant', icon: BrainCircuit },
 ]
 
 const SETTINGS_ITEMS = [

@@ -6,6 +6,7 @@ import { ActiveDeploymentsProvider } from './hooks/useActiveDeployments'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppLayout } from './components/layout/AppLayout'
+import { AIAssistantPage } from './pages/AIAssistantPage'
 import { AuditLogPage } from './pages/AuditLogPage'
 import { InvitesPage } from './pages/InvitesPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="patches" element={<ErrorBoundary><PatchesPage /></ErrorBoundary>} />
                 <Route path="patches/:patchId" element={<ErrorBoundary><PatchDetailPage /></ErrorBoundary>} />
                 <Route path="reports" element={<ErrorBoundary><ReportsPage /></ErrorBoundary>} />
+                <Route path="ai-assistant" element={<ErrorBoundary><AIAssistantPage /></ErrorBoundary>} />
                 <Route path="audit-log" element={<ErrorBoundary><AuditLogPage /></ErrorBoundary>} />
                 <Route path="settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
                 <Route path="settings/invites" element={<Navigate to="/settings" replace />} />
